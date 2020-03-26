@@ -16,7 +16,7 @@ GN_option(GN_staticLinkage on)
 # ---------------------------|
 
 GN_init()
-project("videodiary")
+project("gravityAssists")
 GN_subprojects(
     libs/boost
     libs/reflect
