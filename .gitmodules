@@ -10,3 +10,6 @@
 [submodule "libs/math"]
 	path = libs/math
 	url = https://github.com/bomkvilt/gremlin-math
+[submodule "3rd-party/spice"]
+	path = 3rd-party/spice
+	url = https://github.com/bomkvilt/gremlin-spice

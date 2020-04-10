@@ -18,6 +18,7 @@ GN_option(GN_staticLinkage on)
 GN_init()
 project("gravityAssists")
 GN_subprojects(
+    3rd-party/spice
     libs/boost
     libs/reflect
     libs/math
