@@ -3,7 +3,7 @@
 
 
 
-FirstApprox::FirstApprox(Planet& A, Planet& B, Planet& C, float t0, int n)
+FirstApprox::FirstApprox(PlanetBase& A, PlanetBase& B, PlanetBase& C, float t0, int n)
 	: A(A), B(B), C(C)
 	, t0(t0)
 	, te(B.GetPeriod() / 2 + t0)
@@ -15,7 +15,7 @@ FirstApprox::FirstApprox(Planet& A, Planet& B, Planet& C, float t0, int n)
 }
 
 
-auto FirstApprox::FindTrajectories(const std::vector<float>& df0s) -> std::vector<FirstApproxUtiles::TragectoryFinder>
+auto FirstApprox::FindTrajectories(const std::vector<float>& df0s)->std::vector<FirstApproxUtiles::TragectoryFinder>
 {
 	// departure planet's params
 	A.SetTime(t0);

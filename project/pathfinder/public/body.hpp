@@ -7,12 +7,7 @@
 class Body
 {
 public:
-	Body(float mass = 0) : mass(mass) {}
-
-	virtual ~Body() = default;
-
-public:
-	float GetMass()      const { return mass; }
+	void SetGravParam(float newGrav) { grav = newGrav; }
 	float GetGravParam() const { return grav; }
 
 	FVector& GetLocation() { return location; }
@@ -24,7 +19,7 @@ public:
 	void SetVelocity(const FVector& newVelocity) { velocity = newVelocity; }
 
 protected:
-	float mass = 0;
+
 	float grav = 0;
 	FVector location;
 	FVector velocity;

@@ -92,7 +92,7 @@ namespace FirstApproxUtiles
 		, M(M)
 	{}
 
-	bool TragectoryFinder::FindTragectory(IPlanet& B, float f0_)
+	bool TragectoryFinder::FindTragectory(PlanetBase& B, float f0_)
 	{
 		using namespace finders;
 		constexpr auto day = 3600 * 24;

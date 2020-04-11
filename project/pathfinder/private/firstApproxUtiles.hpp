@@ -2,7 +2,7 @@
 #define PATHFINDER__FIRSTAPPROXUTILES_HPP
 
 #include "math/math.hpp"
-#include "planet.hpp"
+#include "planetBase.hpp"
 
 
 // functions to find orbital params
@@ -38,7 +38,7 @@ namespace FirstApproxUtiles
 
 	public:
 		TragectoryFinder(const FVector& R0, float Q0, float t0, float te, float ts, float M);
-		bool FindTragectory(IPlanet& B, float f0_);
+		bool FindTragectory(PlanetBase& B, float f0_);
 	};
 }
 

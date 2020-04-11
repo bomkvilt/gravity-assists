@@ -121,46 +121,47 @@ TEST_F(firstApproxUtiles_tests, find_pew_noSolution)
 
 TEST_F(firstApproxUtiles_tests, pathFinder_planarPlanets)
 {
-	struct TestPlanet : public IPlanet
+	struct TestEphemerides : public IPlanetEphemerides
 	{
-	public:
-		float time   = 0;
-		float phase  = 0;
+		float phase0 = 0;
 		float period = 0;
 		float radius = 0;
+		float GM = 0;
 
-		TestPlanet(float gravParam, float radius, float period, float phase)
+		TestEphemerides(float GM, float radius, float period, float phase)
 			: period(period)
 			, radius(radius)
-			, phase(phase)
+			, phase0(phase)
+			, GM(GM)
+		{}
+
+		FVector GetLocation(float time) override
 		{
-			grav = gravParam;
-			SetTime(time);
+			auto newPhase = phase0 + time / period * 360;
+			auto rotation = FQuat({ 0, 0, 1 }, newPhase);
+			auto location = FVector(radius, 0, 0);
+			return rotation * location;
 		}
 
-	public:
-		IPlanet* OnTime(float newTime) override
-		{ 
-			SetTime(newTime);
-			return this; 
+		float GetGM() const override
+		{
+			return GM;
 		}
 
-		void SetTime(float newTime) override 
+		float GetT() const override
 		{
-			time = newTime;
-			auto newPhase = phase + newTime / period * 360;
-			SetLocation(FQuat({ 0, 0, 1 }, newPhase) * FVector(radius, 0, 0));
-		};
-
-		float GetTime() const override 
-		{ 
-			return time;
-		};
-
-		float GetPeriod() const override 
-		{ 
 			return period;
-		};
+		}
+	};
+
+	struct TestPlanet : public PlanetBase
+	{
+	public:
+		TestPlanet(float GM, float R, float T, float f0)
+			: PlanetBase(std::make_shared<TestEphemerides>(GM, R, T, f0))
+		{
+			SetTime(0);
+		}
 	};
 
 	auto A = TestPlanet(3.986E+14, 149.6E+9, 31.6E+6, 0 );
