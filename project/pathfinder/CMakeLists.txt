@@ -1,3 +1,3 @@
 GN_Unit(pathfinder
-    units math spice
+    units math spice gsl
 )
