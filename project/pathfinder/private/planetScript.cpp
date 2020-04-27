@@ -1,13 +1,14 @@
-#include "planetEphemerides.hpp"
+#include "planetScript.hpp"
 #include "SpiceUsr.h"
 #include <array>
 
 
-namespace PlanetEphemeridesUtiles
+namespace Pathfinder::PlanetScript::utiles
 {
-    std::string EPlanet2SPICE(EPlanet planetName)
+	std::string GetSPICEName(EPlanet planetName)
     {
         switch (planetName) {
+		case EPlanet::eNONE		: return "";
 		case EPlanet::eSun		: return "Sun";
 		case EPlanet::eMercury	: return "Mercury";
 		case EPlanet::eVenus	: return "Venus";
@@ -20,10 +21,10 @@ namespace PlanetEphemeridesUtiles
 		};
     }
 
-	EPlanet GetPrimaryBody(EPlanet planetName)
+	EPlanet GetCenterBody(EPlanet planetName)
 	{
 		switch (planetName) {
-		case EPlanet::eSun		: return EPlanet::eNotAPlant;
+		case EPlanet::eSun		: return EPlanet::eNONE;
 		case EPlanet::eMercury	: return EPlanet::eSun;
 		case EPlanet::eVenus	: return EPlanet::eSun;
 		case EPlanet::eEarth	: return EPlanet::eSun;
@@ -49,10 +50,36 @@ namespace PlanetEphemeridesUtiles
 			auto state = GetRawMovement(name, time);
 			// km -> m
 			return { 
+				(float)state[0] * 1e3f, 
 				(float)state[1] * 1e3f, 
-				(float)state[2] * 1e3f, 
-				(float)state[3] * 1e3f
+				(float)state[2] * 1e3f
 			};
+		}
+
+		FVector GetVelocity(const std::string& name, float time)
+		{
+			auto state = GetRawMovement(name, time);
+			// km/s -> m/s
+			return {
+				(float)state[3] * 1e3f,
+				(float)state[4] * 1e3f,
+				(float)state[5] * 1e3f
+			};
+		}
+
+		auto GetMovement(const std::string& name, float time)->std::tuple<FVector, FVector>
+		{
+			auto state = GetRawMovement(name, time);
+			// km -> m, km/s -> m/s
+			return {{
+				(float)state[0] * 1e3f,
+				(float)state[1] * 1e3f,
+				(float)state[2] * 1e3f
+			}, {
+				(float)state[3] * 1e3f,
+				(float)state[4] * 1e3f,
+				(float)state[5] * 1e3f
+			}};
 		}
 
 		float GetGM(const std::string& name)
@@ -84,6 +111,8 @@ namespace PlanetEphemeridesUtiles
 		{
 			// generic planet ephemerids
 			furnsh_c(SPICE_KERNELS"/de438.bsp");
+			furnsh_c(SPICE_KERNELS"/jup343.bsp");
+			furnsh_c(SPICE_KERNELS"/mar097.bsp");
 			furnsh_c(SPICE_KERNELS"/latest_leapseconds.tls");
 			furnsh_c(SPICE_KERNELS"/gm_de431.tpc");
 		}
@@ -109,27 +138,42 @@ namespace PlanetEphemeridesUtiles
 }
 
 
-PlanetEphemerides::PlanetEphemerides(EPlanet planetName, const std::string& absTime)
-	: name    (PlanetEphemeridesUtiles::EPlanet2SPICE(planetName))
-	, timeRoot(PlanetEphemeridesUtiles::SPICE::Get().GetAbsTime(absTime))
+namespace Pathfinder::PlanetScript
 {
-	auto parent = PlanetEphemeridesUtiles::GetPrimaryBody(planetName);
-	primaryBody = PlanetEphemeridesUtiles::EPlanet2SPICE(parent);
-	T  = PlanetEphemeridesUtiles::SPICE::Get().GetPeriod(name, primaryBody, timeRoot);
-	GM = PlanetEphemeridesUtiles::SPICE::Get().GetGM(name);
-}
+	PlanetScript::PlanetScript(EPlanet planet, const std::string& J2000Time)
+		: name  (utiles::GetSPICEName(planet))
+		, center(utiles::GetSPICEName(utiles::GetCenterBody(planet)))
+		, t0	(utiles::SPICE::Get().GetAbsTime(J2000Time))
+		, GM	(utiles::SPICE::Get().GetGM(name))
+	{
+		if (center != "")
+		{
+			T = utiles::SPICE::Get().GetPeriod(name, center, t0);
+		}
+	}
 
-FVector PlanetEphemerides::GetLocation(float time)
-{
-	return PlanetEphemeridesUtiles::SPICE::Get().GetLocation(name, time);
-}
-
-float PlanetEphemerides::GetGM() const 
-{
-	return GM;
-}
-
-float PlanetEphemerides::GetT() const
-{
-	return T;
+	float PlanetScript::GetT(float time) const
+	{
+		return T;
+	}
+	
+	float PlanetScript::GetGM(float time) const
+	{
+		return GM;
+	}
+	
+	FVector PlanetScript::GetLocation(float time) const
+	{
+		return utiles::SPICE::Get().GetLocation(name, t0 + time);
+	}
+	
+	FVector PlanetScript::GetVelocity(float time) const
+	{
+		return utiles::SPICE::Get().GetVelocity(name, t0 + time);
+	}
+	
+	auto PlanetScript::GetMovement(float time) -> std::tuple<FVector, FVector> const
+	{
+		return utiles::SPICE::Get().GetMovement(name, t0 + time);
+	}
 }

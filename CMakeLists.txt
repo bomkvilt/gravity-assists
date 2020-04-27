@@ -23,5 +23,6 @@ GN_subprojects(
     libs/reflect
     libs/math
     libs/gsl
+    libs/common
     project/pathfinder
     )
