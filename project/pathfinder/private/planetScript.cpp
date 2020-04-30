@@ -45,58 +45,58 @@ namespace Pathfinder::PlanetScript::utiles
 			return spice;
 		}
 
-		FVector GetLocation(const std::string& name, float time)
+		FVector GetLocation(const std::string& name, FReal time)
 		{
 			auto state = GetRawMovement(name, time);
 			// km -> m
 			return { 
-				(float)state[0] * 1e3f, 
-				(float)state[1] * 1e3f, 
-				(float)state[2] * 1e3f
+				(FReal)state[0] * 1e3f, 
+				(FReal)state[1] * 1e3f, 
+				(FReal)state[2] * 1e3f
 			};
 		}
 
-		FVector GetVelocity(const std::string& name, float time)
+		FVector GetVelocity(const std::string& name, FReal time)
 		{
 			auto state = GetRawMovement(name, time);
 			// km/s -> m/s
 			return {
-				(float)state[3] * 1e3f,
-				(float)state[4] * 1e3f,
-				(float)state[5] * 1e3f
+				(FReal)state[3] * 1e3f,
+				(FReal)state[4] * 1e3f,
+				(FReal)state[5] * 1e3f
 			};
 		}
 
-		auto GetMovement(const std::string& name, float time)->std::tuple<FVector, FVector>
+		auto GetMovement(const std::string& name, FReal time)->std::tuple<FVector, FVector>
 		{
 			auto state = GetRawMovement(name, time);
 			// km -> m, km/s -> m/s
 			return {{
-				(float)state[0] * 1e3f,
-				(float)state[1] * 1e3f,
-				(float)state[2] * 1e3f
+				(FReal)state[0] * 1e3f,
+				(FReal)state[1] * 1e3f,
+				(FReal)state[2] * 1e3f
 			}, {
-				(float)state[3] * 1e3f,
-				(float)state[4] * 1e3f,
-				(float)state[5] * 1e3f
+				(FReal)state[3] * 1e3f,
+				(FReal)state[4] * 1e3f,
+				(FReal)state[5] * 1e3f
 			}};
 		}
 
-		float GetGM(const std::string& name)
+		FReal GetGM(const std::string& name)
 		{
 			// km^3/s^2 -> m^3/s^2
 			return GetRawGM(name) * 1e9f;
 		}
 
-		float GetAbsTime(const std::string& time)
+		FReal GetAbsTime(const std::string& time)
 		{
 			SpiceDouble et = 0;
 			str2et_c(time.c_str(), &et);
 			assert(et);
-			return float(et);
+			return FReal(et);
 		}
 
-		float GetPeriod(const std::string& body, const std::string& primatyBody, float time)
+		FReal GetPeriod(const std::string& body, const std::string& primatyBody, FReal time)
 		{ 
 			// \see: https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/oscltx_c.html
 			auto state = GetRawMovement(body, time);
@@ -118,7 +118,7 @@ namespace Pathfinder::PlanetScript::utiles
 		}
 
 		// position + velocity in km
-		std::array<SpiceDouble,6> GetRawMovement(const std::string& name, float time)
+		std::array<SpiceDouble,6> GetRawMovement(const std::string& name, FReal time)
 		{
 			auto state = std::array<SpiceDouble,6>();
 			SpiceDouble lightTime = 0;
@@ -152,28 +152,115 @@ namespace Pathfinder::PlanetScript
 		}
 	}
 
-	float PlanetScript::GetT(float time) const
+	FReal PlanetScript::GetT(FReal time) const
 	{
 		return T;
 	}
 	
-	float PlanetScript::GetGM(float time) const
+	FReal PlanetScript::GetGM(FReal time) const
 	{
 		return GM;
 	}
 	
-	FVector PlanetScript::GetLocation(float time) const
+	FVector PlanetScript::GetLocation(FReal time) const
+	{
+		if (IsDiscret())
+		{
+			auto& [r, v] = GetMovement_D(time);
+			return r;
+		}
+		return GetLocation_C(time);
+	}
+	
+	FVector PlanetScript::GetVelocity(FReal time) const
+	{
+		if (IsDiscret())
+		{
+			auto& [r, v] = GetMovement_D(time);
+			return v;
+		}
+		return GetVelocity_C(time);
+	}
+	
+	auto PlanetScript::GetMovement(FReal time) -> std::tuple<FVector, FVector> const
+	{
+		if (IsDiscret())
+		{
+			return GetMovement_D(time);
+		}
+		return GetMovement_C(time);
+	}
+
+	void PlanetScript::MakeDiscret(FReal stepSize_, FReal chunkSize_)
+	{
+		if (IsDiscret())
+		{
+			throw std::runtime_error("the ephemerides are already discret");
+		}
+		
+		if (stepSize_ > 0 && chunkSize_ > 0)
+		{
+			stepSize = stepSize_;
+			chunkSize = chunkSize_;
+		}
+		else
+		{
+			throw std::runtime_error("steps and chunk sizes must be positive");
+		}
+	}
+
+	bool PlanetScript::IsDiscret() const
+	{
+		return stepSize > 0;
+	}
+
+	const PlanetScript::MovState& PlanetScript::GetMovement_D(FReal time) const
+	{
+		UInt64 chunkN = time / chunkSize;
+		UInt64 blockN = time / stepSize;
+
+		auto pos = chunks.find(chunkN);
+		auto end = chunks.end();
+		if (pos != end)
+		{
+			return pos->second.at(blockN);
+		}
+		
+		const_cast<PlanetScript*>(this)->AddChunk(chunkN);
+
+		pos = chunks.find(chunkN);
+		end = chunks.end();
+		if (pos != end)
+		{
+			return pos->second.at(blockN);
+		}		
+		throw std::runtime_error("cannot get discret value fot t=" + std::to_string(time) + " s");
+	}
+
+	FVector PlanetScript::GetLocation_C(FReal time) const
 	{
 		return utiles::SPICE::Get().GetLocation(name, t0 + time);
 	}
-	
-	FVector PlanetScript::GetVelocity(float time) const
+
+	FVector PlanetScript::GetVelocity_C(FReal time) const
 	{
 		return utiles::SPICE::Get().GetVelocity(name, t0 + time);
 	}
-	
-	auto PlanetScript::GetMovement(float time) -> std::tuple<FVector, FVector> const
+
+	auto PlanetScript::GetMovement_C(FReal time) -> std::tuple<FVector, FVector> const
 	{
 		return utiles::SPICE::Get().GetMovement(name, t0 + time);
+	}
+
+	void PlanetScript::AddChunk(UInt64 chunkN)
+	{
+		auto& chunk = chunks[chunkN];
+		FReal ti = chunkSize * chunkN;
+		FReal t1 = chunkSize + ti;
+		UInt64 N = ti / stepSize;
+		for (; ti < t1; ti += stepSize, ++N)
+		{
+			chunk[N] = GetMovement_C(ti);
+		}
 	}
 }

@@ -9,24 +9,24 @@ namespace af = Pathfinder::Kepler::Elliptic;
 struct Kepler_tests : public testing::Test
 {
 	//! locations
-	const float r0 = 1.496E+11;
-	const float r1 = 2.279E+11;
-	const float Q0 = DEG2RAD(10 );	const float q0 = 4.71557;	const float E0 = 5.08833;	const float M0 = 5.42727;
-	const float Q1 = DEG2RAD(260);	const float q1 = 9.07889;	const float E1 = 8.92365;	const float M1 = 8.74859;
+	const FReal r0 = 1.496E+11;
+	const FReal r1 = 2.279E+11;
+	const FReal Q0 = DEG2RAD(10 );	const FReal q0 = 4.71557;	const FReal E0 = 5.08833;	const FReal M0 = 5.42727;
+	const FReal Q1 = DEG2RAD(260);	const FReal q1 = 9.07889;	const FReal E1 = 8.92365;	const FReal M1 = 8.74859;
 	//! velocities
-	const float f0 = DEG2RAD(120);	const float v0 = 31712.8;
-	const float f1 = 5.92284;		const float v1 = 19904.4;
+	const FReal f0 = DEG2RAD(120);	const FReal v0 = 31712.8;
+	const FReal f1 = 5.92284;		const FReal v1 = 19904.4;
 	//! orbit params
-	const float GM = 1.327E+20;
-	const float w = -1.74215;
-	const float e =  0.364393;
-	const float p =  1.49773E+11;
-	const float a =  1.72705E+11;
-	const float t =  2.06935e+07;
+	const FReal GM = 1.327E+20;
+	const FReal w = -1.74215;
+	const FReal e =  0.364393;
+	const FReal p =  1.49773E+11;
+	const FReal a =  1.72705E+11;
+	const FReal t =  2.06935e+07;
 	
 	const bool bf = true;
 
-	void ASSERT_VALUES(float val_, float exp_)
+	void ASSERT_VALUES(FReal val_, FReal exp_)
 	{
 		auto val = (boost::format("%1.4d") % val_).str();
 		auto exp = (boost::format("%1.4d") % exp_).str();
@@ -64,11 +64,11 @@ TEST_F(Kepler_tests, find_q)
 TEST_F(Kepler_tests, find_E)
 {
 	{
-		auto res = af::E(q0, r0, e, a);
+		auto res = af::E(q0, r0, e);
 		ASSERT_VALUES(res, E0);
 	}
 	{
-		auto res = af::E(q1, r1, e, a);
+		auto res = af::E(q1, r1, e);
 		ASSERT_VALUES(res, E1);
 	}
 }

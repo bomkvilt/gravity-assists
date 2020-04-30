@@ -12,14 +12,15 @@ namespace Pathfinder::Link
 	{
 		Ephemerides::EphemeridesClient A;
 		Ephemerides::EphemeridesClient B;
-		float t0 = 0;
-		float te = 0;
-		float ts = 0;
-		float tt = 0;
-		float GM = 0;
+		FReal t0 = 0; // [s] - scan range begin
+		FReal te = 0; // [s] - scan range end
+		FReal ts = 0; // [s] - mismatch function sign change scan step
+		FReal tt = 0; // [s] - mismatch tolerance
+		FReal td = 0; // [s] - 
+		FReal GM = 0; // [m3/s2]
 	};
 	
-	void FindLinks(std::vector<Link>& links, const FindLinksConfig& cfg, const std::vector<float>& f0s);
+	void FindLinks(std::vector<Link>& links, const FindLinksConfig& cfg, const std::vector<FReal>& f0s);
 }
 
 
@@ -29,13 +30,13 @@ namespace Pathfinder::Link::Utiles
 	{
 		Ephemerides::EphemeridesClient A;
 		Ephemerides::EphemeridesClient B;
-		float GM;
+		FReal GM;
 
 	public:
 
-		LinkAdapter(const FindLinksConfig& cfg, float f0);
+		LinkAdapter(const FindLinksConfig& cfg, FReal f0);
 
-		bool Find_t(float t);
+		bool Find_t(FReal t);
 
 		void FixParams();
 		void Fix2DParams();

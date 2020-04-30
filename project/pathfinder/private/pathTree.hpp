@@ -56,7 +56,7 @@ namespace Pathfinder
 		using pathID   = uint64_t;
 		using FOnAdded = std::function<void(T& parent, T& child)>;
 
-	public:
+	public: // << interface functions
 
 		static constexpr pathID rootID = 1;
 
@@ -116,28 +116,7 @@ namespace Pathfinder
 		const T& GetPathByIF(pathID path) const
 		{ CONST_FUNCTION_ENTERY(GetPathByIF(path)); }
 
-		template<typename It, typename Fn>
-		void FiilInByLayers(It bgn, It end, Fn clb)
-		{
-			It iA = bgn;
-			It iB = bgn + 1;
-			for (; iB != end; ++iA, ++iB)
-			{
-				auto flag = EFillInFlag(
-					  (EFillInFlag::eFirstIteration && iA   == bgn)
-					| (EFillInFlag::eLastIteration  && iB+1 == end)
-				);
-				clb(*iA, *iB, flag);
-			}
-		}
-
-		template<typename C, typename Fn>
-		void FiilInByLayers(C& container, Fn clb)
-		{
-			FiilInByLayers(container.begin(), container.end(), clb);
-		}
-
-	private:
+	private: // << internal functions
 		
 		Node* GetNodeChecked(pathID id)
 		{

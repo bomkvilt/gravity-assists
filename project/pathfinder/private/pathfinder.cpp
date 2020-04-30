@@ -6,11 +6,11 @@
 
 namespace Pathfinder::utiles
 {
-	float GetFlyTimeLimit(
+	FReal GetFlyTimeLimit(
 		  const Ephemerides::EphemeridesClient& A
 		, const Ephemerides::EphemeridesClient& B
-		, float factor
-		, float GM
+		, FReal factor
+		, FReal GM
 	) {
 		using namespace Math;
 		const auto r0 = A.GetLocation().Size();
@@ -19,11 +19,11 @@ namespace Pathfinder::utiles
 		return Sqrt(a*a*a / GM) * 2 * Pi * factor;
 	}
 
-	std::vector<float> MakeRange(float min, float max, float steps)
+	std::vector<FReal> MakeRange(FReal min, FReal max, FReal steps)
 	{
 		auto step = (max - min) / steps;
-		auto range = std::vector<float>();
-		for (auto val = min; val < max; val += step)
+		auto range = std::vector<FReal>();
+		for (auto val = min; val < max && range.size() < steps; val += step)
 		{
 			range.push_back(val);
 		}
@@ -34,12 +34,12 @@ namespace Pathfinder::utiles
 		  std::vector<Link::Link>& links
 		, const Ephemerides::EphemeridesClient& A
 		, const Ephemerides::EphemeridesClient& B
-		, const std::vector<float>& f0s
-		, float flyFactor
-		, float timeStep
-		, float timeTol
-		, float t0
-		, float GM
+		, const std::vector<FReal>& f0s
+		, FReal flyFactor
+		, FReal timeStep
+		, FReal timeTol
+		, FReal t0
+		, FReal GM
 	) {
 		auto conf = Link::FindLinksConfig();
 		conf.A = A;
@@ -49,7 +49,25 @@ namespace Pathfinder::utiles
 		conf.te = t0 + GetFlyTimeLimit(A, B, flyFactor, GM);
 		conf.ts = timeStep;
 		conf.tt = timeTol;
+		conf.td = timeTol / 100;
 		Link::FindLinks(links, conf, f0s);
+	}
+
+	template<typename It, typename Fn>
+	void FillTree(It bgn, It end, Fn clb)
+	{
+		It iA = bgn;
+		It iB = bgn + 1;
+		for (; iB != end; ++iA, ++iB)
+		{
+			clb(*iA, *iB, iB + 1 == end);
+		}
+	}
+
+	template<typename C, typename Fn>
+	void FillTree(C& container, Fn clb)
+	{
+		FillTree(container.begin(), container.end(), clb);
 	}
 }
 
@@ -76,7 +94,7 @@ namespace Pathfinder
 		}
 	}
 
-	auto PathFinder::FirstApprox()->std::vector<std::vector<FlightInfo>>
+	auto PathFinder::FirstApprox()->std::vector<FlightChain>
 	{
 		auto f0s = utiles::MakeRange(0, 2*Math::Pi, mission.points_f0);
 
@@ -87,7 +105,7 @@ namespace Pathfinder
 			child.absTime += parent.absTime;
 			child.totalTime += parent.totalTime;
 			child.totalImpulse += parent.totalImpulse;
-			child.totalMismatch_v += parent.totalMismatch_v;
+			child.totalMismatch += parent.totalMismatch;
 		});
 		auto rootID = tree.AppendPath([&]()->FlightInfo
 		{
@@ -102,7 +120,7 @@ namespace Pathfinder
 		parents.push_back(rootID);
 
 		auto links = std::vector<Link::Link>();
-		tree.FiilInByLayers(mission.nodes, [&](NodeBase::ptr& iA, NodeBase::ptr& iB, Tree::EFillInFlag flag)
+		utiles::FillTree(mission.nodes, [&](NodeBase::ptr& iA, NodeBase::ptr& iB, bool bLast)
 		{	// find all flights from A to B
 			for (; parents.size(); parents.pop_front(), links.clear())
 			{
@@ -125,35 +143,55 @@ namespace Pathfinder
 				// create child nodes
 				for (auto& link : links)
 				{
-					if (!iA->Check(parent.link.W1, link.W0))
-					{
-						continue;
-					}
-
 					auto child = FlightInfo();
-					child.link    = link;
-					child.absTime = link.dt;
-					if (flag & Tree::EFillInFlag::eFirstIteration)
-					{
-						child.totalImpulse += link.W0.Size();
-					}
-					else
-					{
-						child.totalMismatch_v += (child.link.W0 - parent.link.W1).Size();
-					}
-					if (flag & Tree::EFillInFlag::eLastIteration)
-					{
-						if (!iB->Check(link.W1, FVector()))
+					{ // check out node
+						auto params = InNodeParams{ parent.link.W1, link.W0 };
+						auto [res, bOK] = iA->Check(params);
+						if (!bOK)
 						{
 							continue;
 						}
-						child.totalImpulse += link.W1.Size();
+						child.totalImpulse  += res.Impulse;
+						child.totalMismatch += res.Mismatch;
 					}
+					if (bLast)
+					{ // check in node
+						auto params = InNodeParams{ link.W1, FVector(0) };
+						auto [res, bOK] = iB->Check(params);
+						if (!bOK)
+						{
+							continue;
+						}
+						child.totalImpulse  += res.Impulse;
+						child.totalMismatch += res.Mismatch;
+					}					
+					child.link = link;
+					child.absTime = link.dt;
+					child.totalTime = link.dt;
 					children.push_back(tree.AppendPath(child));
 				}
 			}
 			std::swap(parents, children);
 		});
-		return tree.GetFullPathByID(parents);
+
+		auto paths = std::vector<FlightChain>();
+		for (auto& path : tree.GetFullPathByID(parents))
+		{
+			if (!path.size())
+			{
+				continue;
+			}
+			paths.emplace_back(std::move(path));
+		}
+		return paths;
+	}
+
+	PathFinder::FlightChain::FlightChain(std::vector<PathFinder::FlightInfo>&& chain_)
+		: chain(std::move(chain_))
+	{
+		auto& last = chain.back();
+		totalMismatch = last.totalMismatch;
+		totalImpulse = last.totalImpulse;
+		totalTime = last.totalTime;
 	}
 }

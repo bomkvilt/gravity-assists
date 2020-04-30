@@ -6,38 +6,58 @@
 
 namespace Pathfinder
 {
+	struct InNodeParams
+	{
+	public: // body relative velocities in solar system frame
+		const FVector& W0; // [m/s] - departure
+		const FVector& W1; // [m/s] - arrival
+	};
+
+	struct OutNodeParams
+	{
+	public:
+		float Impulse  = 0; // [m/s] - impulse of speed the node inside
+		float Mismatch = 0; // [m/s] - mismatch of in/out velocity
+	};
+}
+
+
+namespace Pathfinder
+{
 	struct NodeBase
 	{
 		using ptr = std::shared_ptr<NodeBase>;
 
 		Ephemerides::IEphemerides::ptr Script;
 		
-		virtual bool Check(const FVector& Win, const FVector& Wout) const = 0;
+		virtual auto Check(const InNodeParams& in)->std::tuple<OutNodeParams, bool> const = 0;
 	};
 
 	struct NodeDeparture : public NodeBase
 	{
-		float EscapeSpeed = 0; // [m/s]
-		
-		bool Check(const FVector& Win, const FVector& Wout) const override;
+		FReal ParkingRadius = 0; // [m]
+		FReal SphereRadius  = 0; // [m]
+		FReal ImpulseLimit  = 0; // [m/s]
+
+		auto Check(const InNodeParams& in)->std::tuple<OutNodeParams, bool> const override;
 	};
 
 	struct NodeArrival : public NodeBase
 	{
-		float ParkingRadius  = 0; // [m]
-		float SphereRadius   = 0; // [m]
-		float ImpulseLimit_v = 0; // [m/s]
+		FReal ParkingRadius = 0; // [m]
+		FReal SphereRadius  = 0; // [m]
+		FReal ImpulseLimit  = 0; // [m/s]
 
-		bool Check(const FVector& Win, const FVector& Wout) const override;
+		auto Check(const InNodeParams& in)->std::tuple<OutNodeParams, bool> const override;
 	};
 
 	struct NodeFlyBy : public NodeBase
 	{
-		float PlanetRadius = 0; // [m]
-		float SphereRadius = 0; // [m]
-		float MissmatchLimit_v = 0; // [m/s]
+		FReal PlanetRadius  = 0; // [m]
+		FReal SphereRadius  = 0; // [m]
+		FReal MismatchLimit = 0; // [m/s]
 
-		bool Check(const FVector& Win, const FVector& Wout) const override;
+		auto Check(const InNodeParams& in)->std::tuple<OutNodeParams, bool> const override;
 	};
 }
 
@@ -46,12 +66,12 @@ namespace Pathfinder
 	struct Mission
 	{
 		std::vector<NodeBase::ptr> nodes;
-		float normalFlyPeriodFactor = 0;
-		float points_f0 = 0;
-		float timeStep = 0;
-		float timeTol = 0;
-		float GM = 0;
-		float t0 = 0;
+		FReal normalFlyPeriodFactor = 0;
+		FReal points_f0 = 0;
+		FReal timeStep = 0;
+		FReal timeTol = 0;
+		FReal GM = 0;
+		FReal t0 = 0;
 	};
 }
 

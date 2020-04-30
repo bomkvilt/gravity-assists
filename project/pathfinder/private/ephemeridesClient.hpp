@@ -14,11 +14,11 @@ namespace Pathfinder::Ephemerides
 		EphemeridesClient(IEphemerides* conn = nullptr);
 		EphemeridesClient(IEphemerides::ptr& conn);
 
-		void SetTime(float newTime);
+		void SetTime(FReal newTime);
 		void SetDriver(IEphemerides* newConn);
 
-		float	GetT()  const;
-		float	GetGM() const;
+		FReal	GetT()  const;
+		FReal	GetGM() const;
 		FVector GetLocation() const;
 		FVector GetVelocity() const;
 		auto	GetMovement()->std::tuple<FVector, FVector> const;
@@ -27,7 +27,7 @@ namespace Pathfinder::Ephemerides
 
 	private:
 		IEphemerides* conn;
-		float time;
+		FReal time;
 	};
 }
 

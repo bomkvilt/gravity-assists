@@ -12,17 +12,30 @@ namespace Pathfinder
 	public:
 		struct FlightInfo
 		{
-			float totalMismatch_v = 0;
-			float totalImpulse = 0;
-			float totalTime = 0;
-			float absTime = 0;
+			FReal totalMismatch = 0;
+			FReal totalImpulse = 0;
+			FReal totalTime = 0;
+			FReal absTime = 0;
 			Link::Link link;
+		};
+
+		struct FlightChain
+		{
+			std::vector<FlightInfo> chain;
+			FReal totalMismatch = 0;
+			FReal totalImpulse = 0;
+			FReal totalTime = 0;
+
+			FlightChain() = default;
+			FlightChain(FlightChain&&) = default;
+			FlightChain(const FlightChain&) = default;
+			FlightChain(std::vector<FlightInfo>&& chain);
 		};
 
 	public:
 		PathFinder(Mission&& mission);
 
-		auto FirstApprox()->std::vector<std::vector<FlightInfo>>;
+		auto FirstApprox()->std::vector<FlightChain>;
 
 	protected:
 		Mission mission;

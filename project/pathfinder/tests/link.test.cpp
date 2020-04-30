@@ -8,7 +8,7 @@ struct Link_tests : public testing::Test
 {};
 
 
-TEST_F(Link_tests, pathFinder_CocentricOrbits)
+TEST_F(Link_tests, cocentricOrbits_venus)
 {
 	using namespace Pathfinder;
 	// flight from the Earth to the Venus with initial phase distance of 240 deg.
@@ -22,16 +22,67 @@ TEST_F(Link_tests, pathFinder_CocentricOrbits)
 	conf.te = B.GetT(0);
 	conf.ts = B.GetT(0) / 160;
 	conf.tt = 3600 * 24;
+	conf.td = 3600 * 24 / 100;
 	conf.GM = C.GetGM(0);
 	// find all roots sutable for 70 deg (+20deg to local horisont)
 	auto links = std::vector<Link::Link>();
 	Link::FindLinks(links, conf, { DEG2RAD(70) });
 	
 	ASSERT_EQ(links.size(), 1);
-	EXPECT_NEAR(links[0].t1, 1.2e+7, 10e+6);
+	EXPECT_NEAR(links[0].t1, 1.25e+7, 0.05e+7);
 }
 
-TEST_F(Link_tests, pathFinder_3DVelocity)
+TEST_F(Link_tests, cocentricOrbits_mars)
+{
+	using namespace Pathfinder;
+	// flight from the Earth to the Mars with initial phase distance of 0 deg.
+	auto A = PlanetScript::PlanetScriptSimple(3.986E+14, 149.6E+9, 31.6E+6, DEG2RAD(0));
+	auto B = PlanetScript::PlanetScriptSimple(4.282E+13, 227.9E+9, 59.4E+6, DEG2RAD(0));
+	auto C = PlanetScript::PlanetScriptSimple(1.327E+20, 0, 0, 0);
+	auto conf = Link::FindLinksConfig();
+	conf.A.SetDriver(&A);
+	conf.B.SetDriver(&B);
+	conf.t0 = 0;
+	conf.te = B.GetT(0);
+	conf.ts = B.GetT(0) / 160;
+	conf.tt = 3600 * 24;
+	conf.td = 3600 * 24 / 100;
+	conf.GM = C.GetGM(0);
+	// find all roots sutable for 70 deg (+20deg to local horisont)
+	auto links = std::vector<Link::Link>();
+	Link::FindLinks(links, conf, { DEG2RAD(70) });
+
+	ASSERT_EQ(links.size(), 1);
+	EXPECT_NEAR(links[0].t1, 1.75e+7, 0.1e+7);
+}
+
+TEST_F(Link_tests, cocentricOrbits_tangency)
+{
+	using namespace Pathfinder;
+	// flight from the Earth to the Mars with initial phase distance of 0 deg.
+	auto A = PlanetScript::PlanetScriptSimple(3.986E+14, 149.6E+9, 31.6E+6, 0.);
+	auto B = PlanetScript::PlanetScriptSimple(4.282E+13, 227.9E+9, 59.4E+6, 0.776);
+	auto C = PlanetScript::PlanetScriptSimple(1.327E+20, 0, 0, 0);
+	auto conf = Link::FindLinksConfig();
+	conf.A.SetDriver(&A);
+	conf.B.SetDriver(&B);
+	conf.t0 = 0;
+	conf.te = B.GetT(0);
+	conf.ts = B.GetT(0) / 160;
+	conf.tt = 3600 * 24;
+	conf.td = 3600 * 24 / 100;
+	conf.GM = C.GetGM(0);
+	
+	auto links = std::vector<Link::Link>();
+	Link::FindLinks(links, conf, { DEG2RAD(90) });
+
+	ASSERT_EQ(links.size(), 5);
+	EXPECT_NEAR(links[4].t1, 2.23e+7, 0.1e+7);
+	EXPECT_NEAR(links[4].v0, 32726, 1e+2);
+	EXPECT_NEAR(links[4].v1, 21482, 1e+2);
+}
+
+TEST_F(Link_tests, 3DVelocity)
 {
 	namespace l = Pathfinder::Link;
 	namespace u = Pathfinder::Link::Utiles;

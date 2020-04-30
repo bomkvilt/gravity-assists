@@ -2,46 +2,48 @@
 #define PATHFINDER__KEPLERORBIT_HPP
 
 #include <tuple>
+#include "math/math.hpp"
 
 
 namespace Pathfinder::Kepler
 {
-	float h(float vi, float ri, float GM);
+	FReal h(FReal vi, FReal ri, FReal GM);
+	FReal v(FReal hi, FReal ri, FReal GM);
 
-	float reorbit_v(float v0, float r0, float r1, float GM);
+	FReal reorbit_v(FReal v0, FReal r0, FReal r1, FReal GM);
 }
 
 namespace Pathfinder::Kepler::Elliptic
 {
 	struct _epwqq
 	{
-		float e  = 0;
-		float p  = 0;
-		float w  = 0;
-		float q0 = 0;
-		float q1 = 0;
+		FReal e  = 0;
+		FReal p  = 0;
+		FReal w  = 0;
+		FReal q0 = 0;
+		FReal q1 = 0;
 	};
-	auto epwqq(float r0, float r1, float Q0, float Q1, float f0)->std::tuple<_epwqq, bool>;
-	auto ep(float r0, float r1, float q0, float q1)->std::tuple<float, float>;
-	auto qq(float Q0, float Q1, float w           )->std::tuple<float, float>;
-	float w(float r0, float r1, float Q0, float Q1, float f0);
+	auto epwqq(FReal r0, FReal r1, FReal Q0, FReal Q1, FReal f0)->std::tuple<_epwqq, bool>;
+	auto ep(FReal r0, FReal r1, FReal q0, FReal q1)->std::tuple<FReal, FReal>;
+	auto qq(FReal Q0, FReal Q1, FReal w           )->std::tuple<FReal, FReal>;
+	FReal w(FReal r0, FReal r1, FReal Q0, FReal Q1, FReal f0);
 
-	bool  bf(float Q0, float f0);
-	float a (float e , float p );
-	float E (float qi, float ri, float e, float a);
-	float M (float Ei, float e);
-	float dt(float M0, float M1, float a, float GM, bool bf);
-	float v (float qi, float e , float p, float GM);
-	float f (float Qi, float qi, float e, bool bf);
+	bool  bf(FReal Q0, FReal f0);
+	FReal a (FReal e , FReal p );
+	FReal E (FReal qi, FReal ri, FReal e);
+	FReal M (FReal Ei, FReal e);
+	FReal dt(FReal M0, FReal M1, FReal a, FReal GM, bool bf);
+	FReal v (FReal qi, FReal e , FReal p, FReal GM);
+	FReal f (FReal Qi, FReal qi, FReal e, bool bf);
 
-	float NZ(float f);
+	FReal NZ(FReal f);
 }
 
 namespace Pathfinder::Kepler::Hiperbolic
 {
-	float bmin(float v, float r, float rpl, float GM);
+	FReal bmin(FReal v, FReal r, FReal rpl, FReal GM);
 
-	float kink(float v, float b, float r, float GM);
+	FReal kink(FReal v, FReal b, FReal r, FReal GM);
 }
 
 

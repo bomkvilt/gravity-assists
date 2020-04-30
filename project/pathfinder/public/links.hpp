@@ -11,20 +11,20 @@ namespace Pathfinder::Link
 		FVector R0;		FVector R1;
 		FVector V0;		FVector V1;
 		FVector W0;		FVector W1;
-		float r0 = 0;	float r1 = 0;
-		float f0 = 0;	float f1 = 0;
-		float v0 = 0;	float v1 = 0;
-		float t0 = 0;	float t1 = 0;
-		float Q0 = 0;	float Q1 = 0;
-		float q0 = 0;	float q1 = 0;
-		float E0 = 0;	float E1 = 0;
-		float M0 = 0;	float M1 = 0;
+		FReal r0 = 0;	FReal r1 = 0;
+		FReal f0 = 0;	FReal f1 = 0;
+		FReal v0 = 0;	FReal v1 = 0;
+		FReal t0 = 0;	FReal t1 = 0;
+		FReal Q0 = 0;	FReal Q1 = 0;
+		FReal q0 = 0;	FReal q1 = 0;
+		FReal E0 = 0;	FReal E1 = 0;
+		FReal M0 = 0;	FReal M1 = 0;
 
-		float dt = 0;
-		float e = 0;
-		float p = 0;
-		float a = 0;
-		float w = 0;
+		FReal dt = 0;
+		FReal e = 0;
+		FReal p = 0;
+		FReal a = 0;
+		FReal w = 0;
 		bool bf = false;
 	};
 }

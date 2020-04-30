@@ -14,11 +14,11 @@ namespace Pathfinder::Ephemerides
 
 		virtual ~IEphemerides() = default;
 
-		virtual float GetT (float time) const = 0;
-		virtual float GetGM(float time) const = 0;
-		virtual FVector GetLocation(float time) const = 0;
-		virtual FVector GetVelocity(float time) const = 0;
-		virtual auto GetMovement(float time)->std::tuple<FVector, FVector> const = 0;
+		virtual FReal GetT (FReal time) const = 0;
+		virtual FReal GetGM(FReal time) const = 0;
+		virtual FVector GetLocation(FReal time) const = 0;
+		virtual FVector GetVelocity(FReal time) const = 0;
+		virtual auto GetMovement(FReal time)->std::tuple<FVector, FVector> const = 0;
 	};
 }
 

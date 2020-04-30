@@ -4,12 +4,17 @@
 
 namespace Pathfinder::Kepler
 {
-	float h(float vi, float ri, float GM)
+	FReal h(FReal vi, FReal ri, FReal GM)
 	{
 		return vi*vi - 2*GM/ri;
 	}
 
-	float reorbit_v(float v0, float r0, float r1, float GM)
+	FReal v(FReal hi, FReal ri, FReal GM)
+	{
+		return Math::Sqrt(hi + 2*GM/ri);
+	}
+
+	FReal reorbit_v(FReal v0, FReal r0, FReal r1, FReal GM)
 	{
 		// v0^2 - 2 GM/r0 == v1^2 - 2 GM/r1
 		return Math::Sqrt(v0*v0 - 2*GM/r0 + 2*GM/r1);
@@ -19,7 +24,7 @@ namespace Pathfinder::Kepler
 
 namespace Pathfinder::Kepler::Elliptic
 {
-	auto epwqq(float r0, float r1, float Q0, float Q1, float f0) -> std::tuple<_epwqq, bool>
+	auto epwqq(FReal r0, FReal r1, FReal Q0, FReal Q1, FReal f0) -> std::tuple<_epwqq, bool>
 	{
 		if (Math::Equal(Q0, f0, 10e-5))
 		{
@@ -44,7 +49,7 @@ namespace Pathfinder::Kepler::Elliptic
 		return { _epwqq(), false };
 	}
 
-	auto ep(float r0, float r1, float q0, float q1) -> std::tuple<float, float>
+	auto ep(FReal r0, FReal r1, FReal q0, FReal q1) -> std::tuple<FReal, FReal>
 	{
 		using namespace Math;
 		auto delta = r0/r1 - 1;
@@ -61,7 +66,7 @@ namespace Pathfinder::Kepler::Elliptic
 		return { 0.f, r0 };
 	}
 	
-	auto qq(float Q0, float Q1, float w) -> std::tuple<float, float>
+	auto qq(FReal Q0, FReal Q1, FReal w) -> std::tuple<FReal, FReal>
 	{
 		auto q0 = NZ(Q0 + w);
 		auto q1 = NZ(Q1 + w);
@@ -72,7 +77,7 @@ namespace Pathfinder::Kepler::Elliptic
 		return { q0, q1 + 2*Math::Pi };
 	}
 	
-	float w(float r0, float r1, float Q0, float Q1, float f0)
+	FReal w(FReal r0, FReal r1, FReal Q0, FReal Q1, FReal f0)
 	{
 		using namespace Math;
 		auto delta = r0/r1 - 1;
@@ -86,24 +91,25 @@ namespace Pathfinder::Kepler::Elliptic
 		return Pi/2 * Sign(Q0 - Q1);
 	}
 	
-	bool bf(float Q0, float f0)
+	bool bf(FReal Q0, FReal f0)
 	{
 		return NZ(f0 - Q0) < Math::Pi;
 	}
 	
-	float a(float e, float p)
+	FReal a(FReal e, FReal p)
 	{
 		return p / (1 - e*e);
 	}
 
-	float E(float qi, float ri, float e, float a)
+	FReal E(FReal qi, FReal ri, FReal e)
 	{
 		using namespace Math;
 		if (Equal(e, 0, 10e-7))
 		{
 			return qi;
 		}
-		auto AC = Acos((a - ri) / a / e);
+		auto Cq = Cos(qi);
+		auto AC = Acos((e + Cq) / (1 + e*Cq));
 		return	qi < 1*Pi ? +AC + 0*Pi
 			:	qi < 2*Pi ? -AC + 2*Pi
 			:	qi < 3*Pi ? +AC + 2*Pi
@@ -111,30 +117,30 @@ namespace Pathfinder::Kepler::Elliptic
 			;
 	}
 
-	float M(float Ei, float e)
+	FReal M(FReal Ei, FReal e)
 	{
 		using namespace Math;
 		return Ei - e * Sin(Ei);
 	}
 
-	float dt(float M0, float M1, float a, float GM, bool bf)
+	FReal dt(FReal M0, FReal M1, FReal a, FReal GM, bool bf)
 	{
 		using namespace Math;
-		auto c = Sqrt(a* a / GM * a);
+		auto c = Sqrt(a / GM * a * a);
 		return bf
 			? c * (0*Pi + (M1 - M0))
 			: c * (2*Pi - (M1 - M0))
 			;
 	}
 
-	float v(float qi, float e, float p, float GM)
+	FReal v(FReal qi, FReal e, FReal p, FReal GM)
 	{
 		using namespace Math;
 		auto c = GM / p;
 		return Sqrt(c * (1 + 2*e*Cos(qi) + e*e));
 	}
 
-	float f(float Qi, float qi, float e, bool bf)
+	FReal f(FReal Qi, FReal qi, FReal e, bool bf)
 	{
 		using namespace Math;
 		auto AT = Atan((e*Sin(qi)) / (1 + e*Cos(qi)));
@@ -142,7 +148,7 @@ namespace Pathfinder::Kepler::Elliptic
 		return NZ(bf ? fi : fi + Pi);
 	}
 
-	float NZ(float f)
+	FReal NZ(FReal f)
 	{
 		auto pi2 = 2 * Math::Pi;
 		return f - pi2 * std::floor(f / pi2);
@@ -152,7 +158,7 @@ namespace Pathfinder::Kepler::Elliptic
 
 namespace Pathfinder::Kepler::Hiperbolic
 {
-	float bmin(float v, float r, float rpl, float GM)
+	FReal bmin(FReal v, FReal r, FReal rpl, FReal GM)
 	{
 		using namespace Math;
 		const auto s1 = rpl / v;
@@ -161,7 +167,7 @@ namespace Pathfinder::Kepler::Hiperbolic
 		return s1 * Sqrt(s2 + v*v - s3);
 	}
 	
-	float kink(float v, float b, float r, float GM)
+	FReal kink(FReal v, FReal b, FReal r, FReal GM)
 	{
 		using namespace Math;
 		const auto v2 = v*v;

@@ -20,21 +20,44 @@ namespace Pathfinder::PlanetScript
 
 	class PlanetScript : public Ephemerides::IEphemerides
 	{
+	protected:
+		using MovState = std::tuple<FVector, FVector>;
+		using Chunk  = std::unordered_map<UInt64, MovState>;
+		using Chunks = std::unordered_map<UInt64, Chunk>;
+
 	public:
 		PlanetScript(EPlanet planet, const std::string& J2000Time);
 
-		float GetT (float time) const override;
-		float GetGM(float time) const override;
-		FVector GetLocation(float time) const override;
-		FVector GetVelocity(float time) const override;
-		auto GetMovement(float time)->std::tuple<FVector, FVector> const override;
+		FReal GetT (FReal time) const override;
+		FReal GetGM(FReal time) const override;
+		FVector GetLocation(FReal time) const override;
+		FVector GetVelocity(FReal time) const override;
+		auto GetMovement(FReal time)->std::tuple<FVector, FVector> const override;
+
+		void MakeDiscret(FReal stepSize, FReal chunkSize);
+
+		bool IsDiscret() const;
+
+	protected:
+
+		const MovState& GetMovement_D(FReal time) const;
+
+		FVector GetLocation_C(FReal time) const;
+		FVector GetVelocity_C(FReal time) const;
+		auto GetMovement_C(FReal time)->std::tuple<FVector, FVector> const;
+
+		void AddChunk(UInt64 chunkN);
 
 	protected:
 		std::string name;
 		std::string center;
-		double T  = 0;
-		double t0 = 0;
-		double GM = 0;
+		FReal T  = 0;
+		FReal t0 = 0;
+		FReal GM = 0;
+
+		FReal stepSize = 0;
+		FReal chunkSize = 0;
+		Chunks chunks;
 	};
 }
 

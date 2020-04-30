@@ -13,16 +13,19 @@ GN_option(GN_dir_tests "tests")
 GN_option(GN_staticRuntime off)
 GN_option(GN_staticLinkage on)
 
+# use double precission
+set(bDouble on)
+
 # ---------------------------|
 
 GN_init()
 project("gravityAssists")
 GN_subprojects(
     3rd-party/spice
+    libs/common
     libs/boost
     libs/reflect
     libs/math
     libs/gsl
-    libs/common
     project/pathfinder
     )

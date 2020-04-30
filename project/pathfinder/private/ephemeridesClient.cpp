@@ -14,7 +14,7 @@ namespace Pathfinder::Ephemerides
 		, time(NAN)
 	{}
 
-	void EphemeridesClient::SetTime(float newTime)
+	void EphemeridesClient::SetTime(FReal newTime)
 	{
 		time = newTime;
 	}
@@ -24,7 +24,7 @@ namespace Pathfinder::Ephemerides
 		conn = newConn;
 	}
 	
-	float EphemeridesClient::GetT() const
+	FReal EphemeridesClient::GetT() const
 	{
 		if (IsValid())
 		{
@@ -33,7 +33,7 @@ namespace Pathfinder::Ephemerides
 		return 0;
 	}
 	
-	float EphemeridesClient::GetGM() const
+	FReal EphemeridesClient::GetGM() const
 	{
 		if (IsValid())
 		{
@@ -71,6 +71,6 @@ namespace Pathfinder::Ephemerides
 
 	bool EphemeridesClient::IsValid() const
 	{
-		return conn && time != NAN;
+		return conn && !isnan(time);
 	}
 }
