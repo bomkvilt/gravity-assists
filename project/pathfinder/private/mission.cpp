@@ -81,7 +81,7 @@ namespace Pathfinder
 		// can the kink be realised?
 		const auto bmin = kr::Hiperbolic::bmin(w, SphereRadius, PlanetRadius, GM);
 		const auto dmax = kr::Hiperbolic::kink(w, bmin, SphereRadius, GM);
-		const auto d    = Math::Angle2(in.W0, in.W1);
+		const auto d    = Math::Angle2(in.W0, in.W1, Math::EPosAngles());
 		return { params, d < dmax };
 	}
 }

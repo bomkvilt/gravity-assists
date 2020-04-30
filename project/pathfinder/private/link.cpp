@@ -28,7 +28,7 @@ namespace Pathfinder::Link::Utiles
 		B.SetTime(t);
 		R1 = B.GetLocation();
 		r1 = R1.Size();
-		Q1 = Q0 + Math::Angle2(R0, R1);
+		Q1 = Q0 + Math::Angle2(R0, R1, Math::EPosAngles());
 
 		auto [res, bOK] = kepel::epwqq(r0, r1, Q0, Q1, f0);
 		if (bOK)
