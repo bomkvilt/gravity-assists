@@ -4,51 +4,59 @@
 
 namespace Pathfinder::Utiles
 {
-	FReal GetEscapeImpulse(FReal r0, FReal r1, FReal vd, FReal GM)
+	FReal GetEscapeImpulse(FReal r0, FReal r1, FReal h0, FReal v2, FReal GM)
 	{
 		namespace kr = ::Pathfinder::Kepler;
-		using namespace Math;
-		auto ve = kr::v(0, r1, GM);
-		return vd >= ve
-			? Sqrt(vd*vd - 2*GM/r1 + 2*GM/r0) - Sqrt(GM/r0)
-			: Sqrt(GM/r0)*(Sqrt(2.) - 1) + ve - vd
-			;
+		auto v0 = kr::v(h0, r0, GM);
+		auto ve = kr::v(0 , r1, GM);
+		if (v2 > ve)
+		{
+			auto v1 = kr::v(v2, r1, r0, GM);
+			return Math::Abs(v1 - v0);
+		}
+		else
+		{
+			auto v1 = kr::v(0, r0, GM);
+			auto i1 = Math::Abs(v1 - v0);
+			auto i2 = ve - v2;
+			return i1 + i2;
+		}
 	}
 
-	FReal GetParkingImpulse(FReal r0, FReal r1, FReal va, FReal GM)
+	FReal GetParkingImpulse(FReal r0, FReal r1, FReal h1, FReal va, FReal GM)
 	{
 		namespace kr = ::Pathfinder::Kepler;
-		// SC speed: v1<->r0 -> ?<->r1
 		auto h0 = kr::h(va, r0, GM);
 		auto vt = kr::v(h0, r1, GM);
-		// impulse to correct orbit
-		auto v1 = kr::Elliptic::v(0, 0, r1, GM);
+		auto v1 = kr::v(h1, r1, GM);
 		return Math::Abs(v1 - vt);
 	}
 }
 
 namespace Pathfinder
 {
-	auto NodeDeparture::Check(const InNodeParams& in)->std::tuple<OutNodeParams, bool> const
+	auto NodeDepartureBase::Check(const InNodeParams& in)->std::tuple<OutNodeParams, bool> const
 	{
 		// impulse = parkinkg(r=parking) -> escape(r1=sphere, h=0) -> departure(v=w1)
 		auto params = OutNodeParams();
 		params.Impulse = Utiles::GetEscapeImpulse(
 			  ParkingRadius
 			, SphereRadius
+			, GetH0()
 			, in.W1.Size()
 			, Script->GetGM(0)
 		);
 		return { params, ImpulseLimit > 0 ? (params.Impulse < ImpulseLimit) : true };
 	}
 	
-	auto NodeArrival::Check(const InNodeParams& in)->std::tuple<OutNodeParams, bool> const
+	auto NodeArrivalBase::Check(const InNodeParams& in)->std::tuple<OutNodeParams, bool> const
 	{
 		// impulse = arrival(v=w0) -> transfer(v0=w0, r0=shere, r1=parking) -> parking(r=parking)
 		auto params = OutNodeParams();
 		params.Impulse = Utiles::GetParkingImpulse(
 			  SphereRadius
 			, ParkingRadius
+			, GetH1()
 			, in.W0.Size()
 			, Script->GetGM(0)
 		);
@@ -83,5 +91,33 @@ namespace Pathfinder
 		const auto dmax = kr::Hiperbolic::kink(w, bmin, SphereRadius, GM);
 		const auto d    = Math::Angle2(in.W0, in.W1, Math::EPosAngles());
 		return { params, d < dmax };
+	}
+}
+
+namespace Pathfinder::NodeDeparture
+{
+	FReal EnergyDriven::GetH0() const
+	{
+		return h0;
+	}
+
+	FReal Circular::GetH0() const
+	{
+		auto GM = Script->GetGM(0);
+		return -GM / ParkingRadius;
+	}
+}
+
+namespace Pathfinder::NodeArrival
+{
+	FReal EnergyDriven::GetH1() const
+	{
+		return h1;
+	}
+
+	FReal Circular::GetH1() const
+	{
+		auto GM = Script->GetGM(0);
+		return -GM / ParkingRadius;
 	}
 }

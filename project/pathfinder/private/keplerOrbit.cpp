@@ -14,7 +14,7 @@ namespace Pathfinder::Kepler
 		return Math::Sqrt(hi + 2*GM/ri);
 	}
 
-	FReal reorbit_v(FReal v0, FReal r0, FReal r1, FReal GM)
+	FReal v(FReal v0, FReal r0, FReal r1, FReal GM)
 	{
 		// v0^2 - 2 GM/r0 == v1^2 - 2 GM/r1
 		return Math::Sqrt(v0*v0 - 2*GM/r0 + 2*GM/r1);

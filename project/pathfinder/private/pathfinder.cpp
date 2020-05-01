@@ -168,7 +168,7 @@ namespace Pathfinder
 					child.link = link;
 					child.absTime = link.dt;
 					child.totalTime = link.dt;
-					children.push_back(tree.AppendPath(child));
+					children.push_back(tree.AppendPath(child, parentID));
 				}
 			}
 			std::swap(parents, children);

@@ -19,8 +19,8 @@ TEST_F(pathfinder_tests, circularOrbits)
 		std::make_shared<PlanetScript::PlanetScriptSimple>(4.282E+13, 227.9E+9, 59.4E+6, 0.776)
 	};
 
-	auto A = std::make_unique<NodeDeparture>();
-	auto B = std::make_unique<NodeArrival>();
+	auto A = std::make_unique<NodeDeparture::Circular>();
+	auto B = std::make_unique<NodeArrival  ::Circular>();
 	A->ParkingRadius = 6.6e+6;
 	B->ParkingRadius = 3.8e+6;
 	A->SphereRadius = 2.6e+8;
@@ -46,7 +46,7 @@ TEST_F(pathfinder_tests, circularOrbits)
 	auto links = std::map<FReal, Link::Link>();
 	for (auto& path : paths)
 	{
-		links[path.totalImpulse] = path.chain[0].link;
+		links[path.totalImpulse] = path.chain.rbegin()->link;
 	}
 	ASSERT_GE(paths.size(), 1);
 
@@ -69,8 +69,13 @@ TEST_F(pathfinder_tests, realPlanets)
 		std::make_shared<PlanetScript::PlanetScript>(PlanetScript::EPlanet::eMars , startDate)
 	};
 
-	auto A = std::make_unique<NodeDeparture>();
-	auto B = std::make_unique<NodeArrival>();
+	for (auto& script : scripts)
+	{
+		script->MakeDiscret(3600. * 24, 3600. * 24 * 30 * 3);
+	}
+
+	auto A = std::make_unique<NodeDeparture::Circular>();
+	auto B = std::make_unique<NodeArrival  ::Circular>();
 	A->ParkingRadius = 6.6e+6;
 	B->ParkingRadius = 3.8e+6;
 	A->SphereRadius = 2.6e+8;
@@ -96,7 +101,7 @@ TEST_F(pathfinder_tests, realPlanets)
 	auto links = std::map<FReal, Link::Link>();
 	for (auto& path : paths)
 	{
-		links[path.totalImpulse] = path.chain[0].link;
+		links[path.totalImpulse] = path.chain.rbegin()->link;
 	}
 	ASSERT_GE(paths.size(), 1);
 
@@ -121,7 +126,12 @@ TEST_F(pathfinder_tests, EVJ)
 		std::make_shared<PlanetScript::PlanetScript>(PlanetScript::EPlanet::eJupter, startDate)
 	};
 
-	auto E = std::make_unique<NodeDeparture>();
+	for (auto& script : scripts)
+	{
+		script->MakeDiscret(3600. * 24, 3600. * 24 * 30 * 3);
+	}
+
+	auto E = std::make_unique<NodeDeparture::Circular>();
 	{
 		E->ParkingRadius = 6.6e+6;
 		E->SphereRadius = 2.6e+8;
@@ -137,10 +147,11 @@ TEST_F(pathfinder_tests, EVJ)
 		V->Script = scripts[1];
 	}
 
-	auto J = std::make_unique<NodeArrival>();
+	auto J = std::make_unique<NodeArrival::EnergyDriven>();
 	{
 		J->ParkingRadius = 90e+6;
 		J->SphereRadius = 2.4e+10;
+		J->h1 = -7.6e+7;
 		J->ImpulseLimit = 10e+3;
 		J->Script = scripts[3];
 	}
@@ -157,16 +168,15 @@ TEST_F(pathfinder_tests, EVJ)
 	mission.nodes.push_back(std::move(J));
 
 	auto solver = PathFinder(std::move(mission));
-	/*auto paths  = solver.FirstApprox();
+	auto paths  = solver.FirstApprox();
 
 	auto links = std::map<FReal, Link::Link>();
 	for (auto& path : paths)
 	{
-		links[path.totalImpulse] = path.chain[1].link;
+		links[path.totalImpulse] = path.chain.rbegin()->link;
 	}
 	ASSERT_GE(paths.size(), 1);
 
 	auto& [v_min, top] = *links.begin();
-	EXPECT_LT(v_min, 6150);
-	EXPECT_NEAR(top.t1, 72576000, 3600 * 24 * 31);*/
+	EXPECT_LT(v_min, 6000);
 }

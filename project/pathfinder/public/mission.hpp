@@ -33,22 +33,26 @@ namespace Pathfinder
 		virtual auto Check(const InNodeParams& in)->std::tuple<OutNodeParams, bool> const = 0;
 	};
 
-	struct NodeDeparture : public NodeBase
+	struct NodeDepartureBase : public NodeBase
 	{
 		FReal ParkingRadius = 0; // [m]
 		FReal SphereRadius  = 0; // [m]
 		FReal ImpulseLimit  = 0; // [m/s]
 
 		auto Check(const InNodeParams& in)->std::tuple<OutNodeParams, bool> const override;
+
+		virtual FReal GetH0() const = 0;
 	};
 
-	struct NodeArrival : public NodeBase
+	struct NodeArrivalBase : public NodeBase
 	{
 		FReal ParkingRadius = 0; // [m]
 		FReal SphereRadius  = 0; // [m]
 		FReal ImpulseLimit  = 0; // [m/s]
 
 		auto Check(const InNodeParams& in)->std::tuple<OutNodeParams, bool> const override;
+
+		virtual FReal GetH1() const = 0;
 	};
 
 	struct NodeFlyBy : public NodeBase
@@ -60,6 +64,39 @@ namespace Pathfinder
 		auto Check(const InNodeParams& in)->std::tuple<OutNodeParams, bool> const override;
 	};
 }
+
+
+namespace Pathfinder::NodeDeparture
+{
+	struct EnergyDriven : public NodeDepartureBase
+	{
+		FReal h0;
+
+		FReal GetH0() const override;
+	};
+
+	struct Circular : public NodeDepartureBase
+	{
+		FReal GetH0() const override;
+	};
+}
+
+
+namespace Pathfinder::NodeArrival
+{
+	struct EnergyDriven : public NodeArrivalBase
+	{
+		FReal h1;
+
+		FReal GetH1() const override;
+	};
+
+	struct Circular : public NodeArrivalBase
+	{
+		FReal GetH1() const override;
+	};
+}
+
 
 namespace Pathfinder
 {

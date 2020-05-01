@@ -10,7 +10,7 @@ namespace Pathfinder::Kepler
 	FReal h(FReal vi, FReal ri, FReal GM);
 	FReal v(FReal hi, FReal ri, FReal GM);
 
-	FReal reorbit_v(FReal v0, FReal r0, FReal r1, FReal GM);
+	FReal v(FReal v0, FReal r0, FReal r1, FReal GM);
 }
 
 namespace Pathfinder::Kepler::Elliptic
