@@ -17,6 +17,8 @@ namespace Pathfinder::PlanetScript
 		, eJupter
 	};
 
+	bool InitDatabases(const std::string& pathToKernels);
+
 
 	class PlanetScript : public Ephemerides::IEphemerides
 	{

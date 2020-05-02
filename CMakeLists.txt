@@ -23,9 +23,11 @@ project("gravityAssists")
 GN_subprojects(
     3rd-party/spice
     libs/common
-    libs/boost
+    libs/_vcpkg_/boost
+    libs/_vcpkg_/gsl
+    libs/_vcpkg_/clflags
     libs/reflect
     libs/math
-    libs/gsl
     project/pathfinder
+    project/main
     )

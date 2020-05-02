@@ -36,13 +36,25 @@ namespace Pathfinder::PlanetScript::utiles
 		}
 	}
 
-	class SPICE : boost::noncopyable
+	class SPICE final : boost::noncopyable
 	{
+		bool bInitialised = false;
+
 	public:
-		static SPICE& Get()
+		static SPICE& Get(bool bFromInitialiser = false)
 		{
 			static SPICE spice;
-			return spice;
+
+			if (spice.bInitialised)
+			{
+				return spice;
+			}
+			else if (bFromInitialiser)
+			{
+				spice.bInitialised = true;
+				return spice;
+			}
+			throw std::runtime_error("usage of uninitialised kernels is forbidden");
 		}
 
 		FVector GetLocation(const std::string& name, FReal time)
@@ -107,16 +119,7 @@ namespace Pathfinder::PlanetScript::utiles
 		}
 
 	private:
-		SPICE()
-		{
-			// generic planet ephemerids
-			furnsh_c(SPICE_KERNELS"/de438.bsp");
-			furnsh_c(SPICE_KERNELS"/jup343.bsp");
-			furnsh_c(SPICE_KERNELS"/mar097.bsp");
-			furnsh_c(SPICE_KERNELS"/latest_leapseconds.tls");
-			furnsh_c(SPICE_KERNELS"/gm_de431.tpc");
-		}
-
+		
 		// position + velocity in km
 		std::array<SpiceDouble,6> GetRawMovement(const std::string& name, FReal time)
 		{
@@ -135,6 +138,25 @@ namespace Pathfinder::PlanetScript::utiles
 			return gm;
 		}
 	};
+}
+
+
+namespace Pathfinder::PlanetScript
+{
+	bool InitDatabases(const std::string& pathToKernels)
+	{
+		auto loadKernel = [&pathToKernels](const std::string& name)
+		{
+			furnsh_c((pathToKernels + name).c_str());
+		};
+		loadKernel("/de438.bsp");				// earth + venus
+		loadKernel("/jup343.bsp");				// jupiter's system
+		loadKernel("/mar097.bsp");				// mars' system
+		loadKernel("/gm_de431.tpc");			// gravity params
+		loadKernel("/latest_leapseconds.tls");	// ?
+		utiles::SPICE::Get(true);
+		return false;
+	}
 }
 
 

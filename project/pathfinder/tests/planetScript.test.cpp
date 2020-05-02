@@ -4,7 +4,12 @@
 
 
 struct planetScript_tests : public testing::Test
-{};
+{
+	void SetUp() override
+	{
+		Pathfinder::PlanetScript::InitDatabases(SPICE_KERNELS);
+	}
+};
 
 TEST_F(planetScript_tests, check_planetDBConnection)
 {

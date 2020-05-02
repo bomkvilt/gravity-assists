@@ -63,6 +63,8 @@ TEST_F(pathfinder_tests, realPlanets)
 	// this date is a mid of a E-M launch window
 	constexpr auto startDate = "2011-11-26, 12:00:00 TDB";
 
+	PlanetScript::InitDatabases(SPICE_KERNELS);
+
 	auto scripts = std::vector{
 		std::make_shared<PlanetScript::PlanetScript>(PlanetScript::EPlanet::eSun  , startDate),
 		std::make_shared<PlanetScript::PlanetScript>(PlanetScript::EPlanet::eEarth, startDate),
@@ -118,6 +120,8 @@ TEST_F(pathfinder_tests, EVJ)
 	using namespace Pathfinder;
 	// this date is a mid of a E-M launch window
 	constexpr auto startDate = "2021-10-11, 12:00:00 TDB";
+
+	PlanetScript::InitDatabases(SPICE_KERNELS);
 
 	auto scripts = std::vector{
 		std::make_shared<PlanetScript::PlanetScript>(PlanetScript::EPlanet::eSun   , startDate),
