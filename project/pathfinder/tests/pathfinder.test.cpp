@@ -2,6 +2,7 @@
 #include "pathfinder.hpp"
 #include "planetScript.hpp"
 #include "planetScriptSimple.hpp"
+#include "nodes.hpp"
 
 
 
@@ -46,6 +47,7 @@ TEST_F(pathfinder_tests, circularOrbits)
 	auto links = std::map<FReal, Link::Link>();
 	for (auto& path : paths)
 	{
+		ASSERT_EQ(path.chain.size(), 1);
 		links[path.totalImpulse] = path.chain.rbegin()->link;
 	}
 	ASSERT_GE(paths.size(), 1);
@@ -103,6 +105,7 @@ TEST_F(pathfinder_tests, realPlanets)
 	auto links = std::map<FReal, Link::Link>();
 	for (auto& path : paths)
 	{
+		ASSERT_EQ(path.chain.size(), 1);
 		links[path.totalImpulse] = path.chain.rbegin()->link;
 	}
 	ASSERT_GE(paths.size(), 1);
@@ -177,6 +180,7 @@ TEST_F(pathfinder_tests, EVJ)
 	auto links = std::map<FReal, Link::Link>();
 	for (auto& path : paths)
 	{
+		ASSERT_EQ(path.chain.size(), 2);
 		links[path.totalImpulse] = path.chain.rbegin()->link;
 	}
 	ASSERT_GE(paths.size(), 1);

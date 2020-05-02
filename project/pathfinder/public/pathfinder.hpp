@@ -12,6 +12,7 @@ namespace Pathfinder
 	public:
 		struct FlightInfo
 		{
+			FReal totalCorrection = 0;
 			FReal totalMismatch = 0;
 			FReal totalImpulse = 0;
 			FReal totalTime = 0;
@@ -22,23 +23,45 @@ namespace Pathfinder
 		struct FlightChain
 		{
 			std::vector<FlightInfo> chain;
+			FReal totalCorrection = 0;
 			FReal totalMismatch = 0;
 			FReal totalImpulse = 0;
 			FReal totalTime = 0;
 
-			FlightChain() = default;
-			FlightChain(FlightChain&&) = default;
-			FlightChain(const FlightChain&) = default;
 			FlightChain(std::vector<FlightInfo>&& chain);
 		};
+		
+		using FirstApproxDB = std::map<Int64, std::vector<FlightChain>>;
+		using Functionality = std::function<FReal(const FlightChain&)>;
 
 	public:
 		PathFinder(Mission&& mission);
 
-		auto FirstApprox()->std::vector<FlightChain>;
+		// creates a first approximation of flight trajectory
+		auto FirstApprox(FReal timeOffset = 0)->const std::vector<FlightChain>&;
+
+		// sets a functionality to map flight to one real value
+		void SetFunctionality(Functionality functionality);
+
+		// returns lower and upped bounds of functionality spectrum of all computed path
+		auto GetFunctionalityBounds() const->std::tuple<FReal, FReal>;
+
+		// modifies a DB with all paths of all computed time offsets
+		void FilterResults(std::function<void(FirstApproxDB& db)> visiter);
+		void FilterResults(FReal minFunctionalityToLeft);
+
+		// splits left first approx flights on two passive parts with a point with velocity impulce.
+		// \note: count of links in SAX flight chain will be twice to the FAX's one
+		void SecondApprox();
+
+	protected:
+
 
 	protected:
 		Mission mission;
+		
+		Functionality functionality;
+		FirstApproxDB firstApproxData;
 	};
 }
 

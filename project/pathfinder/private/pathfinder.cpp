@@ -94,7 +94,7 @@ namespace Pathfinder
 		}
 	}
 
-	auto PathFinder::FirstApprox()->std::vector<FlightChain>
+	auto PathFinder::FirstApprox(FReal timeOffset) -> const std::vector<FlightChain>&
 	{
 		auto f0s = utiles::MakeRange(0, 2*Math::Pi, mission.points_f0);
 
@@ -111,7 +111,7 @@ namespace Pathfinder
 		{
 			auto node = FlightInfo();
 			node.link.W1 = FVector(0, 0, 0);
-			node.absTime = mission.t0;
+			node.absTime = mission.t0 + timeOffset;
 			return node;
 		}());
 		
@@ -175,7 +175,7 @@ namespace Pathfinder
 		});
 
 		auto paths = std::vector<FlightChain>();
-		for (auto& path : tree.GetFullPathByID(parents))
+		for (auto& path : tree.GetFullPathByID(parents, true))
 		{
 			if (!path.size())
 			{
@@ -183,7 +183,81 @@ namespace Pathfinder
 			}
 			paths.emplace_back(std::move(path));
 		}
-		return paths;
+		return firstApproxData[timeOffset] = std::move(paths);
+	}
+
+	void PathFinder::SetFunctionality(Functionality functionality_)
+	{
+		functionality = functionality_;
+	}
+
+	auto PathFinder::GetFunctionalityBounds() const -> std::tuple<FReal, FReal>
+	{
+		if (!functionality)
+		{
+			throw std::runtime_error("functionality must be set to get functionality bounds");
+		}
+
+		auto min = FReal(NAN);
+		auto max = FReal(NAN);
+		for (const auto& pair : firstApproxData)
+		for (const auto& info : pair.second)
+		{
+			auto value = functionality(info);
+			if (isnan(max) && isnan(min))
+			{
+				min = max = value;
+				continue;
+			}
+			max = Math::Max(max, value);
+			min = Math::Min(min, value);
+		}
+		return { min, max };
+	}
+
+	void PathFinder::FilterResults(std::function<void(FirstApproxDB& db)> visiter)
+	{
+		if (!visiter)
+		{
+			throw std::runtime_error("visiter funtion must be defined");
+		}
+		visiter(firstApproxData);
+	}
+
+	void PathFinder::FilterResults(FReal minFunctionalityToLeft)
+	{
+		if (!functionality)
+		{
+			throw std::runtime_error("functionality must be set to filter first approx trajectories");
+		}
+
+		auto pos1 = firstApproxData.begin();
+		auto end1 = firstApproxData.end();
+		while (pos1 != end1)
+		{
+			auto& list = pos1->second;
+			auto pos2 = list.begin();
+			auto end2 = list.end();
+			while (pos2 != end2)
+			{
+				auto value = functionality(*pos2);
+				if (value > minFunctionalityToLeft)
+				{
+					pos2 = list.erase(pos2);
+				}
+				else ++pos2;
+			}
+			if (list.size() == 0)
+			{
+				pos1 = firstApproxData.erase(pos1);
+			}
+			else ++pos1;
+		}
+	}
+
+	void PathFinder::SecondApprox()
+	{
+
 	}
 
 	PathFinder::FlightChain::FlightChain(std::vector<PathFinder::FlightInfo>&& chain_)

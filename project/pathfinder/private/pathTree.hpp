@@ -84,11 +84,13 @@ namespace Pathfinder
 			return childID;
 		}
 
-		auto GetFullPathByID(pathID path)->std::vector<T>
+		auto GetFullPathByID(pathID path, bool bNoFirst = false)->std::vector<T>
 		{
+			auto offset = bNoFirst ? 1 : 0;
 			auto leaf = GetNodeChecked(path);
-			auto list = std::vector<T>(leaf->lvl);
-			for (auto i = leaf->lvl - 1; i >= 0; --i)
+			auto size = leaf->lvl - offset;
+			auto list = std::vector<T>(size);
+			for (auto i = size - 1; i >= 0; --i)
 			{
 				list[i] = leaf->payload;
 				leaf    = leaf->parent;
@@ -97,13 +99,13 @@ namespace Pathfinder
 		}
 
 		template<typename C>
-		auto GetFullPathByID(const C& paths)->std::vector<std::vector<T>>
+		auto GetFullPathByID(const C& paths, bool bNoFirst = false)->std::vector<std::vector<T>>
 		{
 			auto lists = std::vector<std::vector<T>>();
 			lists.reserve(paths.size());
 			for (auto path : paths)
 			{
-				lists.emplace_back(GetFullPathByID(path));
+				lists.emplace_back(GetFullPathByID(path, bNoFirst));
 			}
 			return lists;
 		}

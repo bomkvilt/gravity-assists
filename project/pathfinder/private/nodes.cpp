@@ -1,4 +1,4 @@
-#include "mission.hpp"
+#include "nodes.hpp"
 #include "keplerOrbit.hpp"
 
 
@@ -31,11 +31,16 @@ namespace Pathfinder::Utiles
 		auto v1 = kr::v(h1, r1, GM);
 		return Math::Abs(v1 - vt);
 	}
+
+	FReal MakeCorrection(FReal var, FReal lim, FReal a, FReal k)
+	{
+		return a * std::pow(Math::Abs(lim - var), -k);
+	}
 }
 
 namespace Pathfinder
 {
-	auto NodeDepartureBase::Check(const InNodeParams& in)->std::tuple<OutNodeParams, bool> const
+	auto NodeDepartureBase::Check(const InNodeParams& in, bool bGenCorrection)->std::tuple<OutNodeParams, bool> const
 	{
 		// impulse = parkinkg(r=parking) -> escape(r1=sphere, h=0) -> departure(v=w1)
 		auto params = OutNodeParams();
@@ -46,10 +51,23 @@ namespace Pathfinder
 			, in.W1.Size()
 			, Script->GetGM(0)
 		);
-		return { params, ImpulseLimit > 0 ? (params.Impulse < ImpulseLimit) : true };
+		if (ImpulseLimit > 0 && params.Impulse > ImpulseLimit)
+		{
+			return { params, false };
+		}
+		if (ImpulseLimit > 0 && bGenCorrection)
+		{
+			params.Correction = Utiles::MakeCorrection(
+				  params.Impulse
+				, ImpulseLimit
+				, A_impulse
+				, K_impulse
+			);
+		}
+		return { params, true };
 	}
 	
-	auto NodeArrivalBase::Check(const InNodeParams& in)->std::tuple<OutNodeParams, bool> const
+	auto NodeArrivalBase::Check(const InNodeParams& in, bool bGenCorrection)->std::tuple<OutNodeParams, bool> const
 	{
 		// impulse = arrival(v=w0) -> transfer(v0=w0, r0=shere, r1=parking) -> parking(r=parking)
 		auto params = OutNodeParams();
@@ -60,10 +78,23 @@ namespace Pathfinder
 			, in.W0.Size()
 			, Script->GetGM(0)
 		);
-		return { params, ImpulseLimit > 0 ? (params.Impulse < ImpulseLimit) : true };
+		if (ImpulseLimit > 0 && params.Impulse > ImpulseLimit)
+		{
+			return { params, false };
+		}
+		if (ImpulseLimit > 0 && bGenCorrection)
+		{
+			params.Correction = Utiles::MakeCorrection(
+				  params.Impulse
+				, ImpulseLimit
+				, A_impulse
+				, K_impulse
+			);
+		}
+		return { params, true };
 	}
 	
-	auto NodeFlyBy::Check(const InNodeParams& in)->std::tuple<OutNodeParams, bool> const
+	auto NodeFlyBy::Check(const InNodeParams& in, bool bGenCorrection)->std::tuple<OutNodeParams, bool> const
 	{
 		auto w0 = in.W0.Size();
 		auto w1 = in.W1.Size();
@@ -90,7 +121,27 @@ namespace Pathfinder
 		const auto bmin = kr::Hiperbolic::bmin(w, SphereRadius, PlanetRadius, GM);
 		const auto dmax = kr::Hiperbolic::kink(w, bmin, SphereRadius, GM);
 		const auto d    = Math::Angle2(in.W0, in.W1, Math::EPosAngles());
-		return { params, d < dmax };
+		if (d >= dmax)
+		{
+			return { params, false };
+		}
+		
+		if (bGenCorrection)
+		{
+			params.Correction += Utiles::MakeCorrection(
+				  params.Mismatch
+				, MismatchLimit
+				, A_mismatch
+				, K_mismatch
+			);
+			params.Correction += Utiles::MakeCorrection(
+				  d
+				, dmax
+				, A_kink
+				, K_kink
+			);
+		}
+		return { params, true };
 	}
 }
 
