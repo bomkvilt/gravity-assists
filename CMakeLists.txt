@@ -21,11 +21,11 @@ set(bDouble on)
 GN_init()
 project("gravityAssists")
 GN_subprojects(
-    3rd-party/spice
     libs/common
-    libs/_vcpkg_/boost
-    libs/_vcpkg_/gsl
-    libs/_vcpkg_/clflags
+    3rd-party/spice
+    3rd-party/boost
+    3rd-party/gsl
+    3rd-party/clflags
     libs/reflect
     libs/math
     project/pathfinder
