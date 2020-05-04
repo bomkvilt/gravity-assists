@@ -1,6 +1,7 @@
 #include "planetScriptSimple.hpp"
 
 
+
 namespace Pathfinder::PlanetScript
 {
 	PlanetScriptSimple::PlanetScriptSimple(FReal GM, FReal radius, FReal period, FReal phase)

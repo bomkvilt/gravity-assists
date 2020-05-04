@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "keplerOrbit.hpp"
+#include "trajectory/keplerOrbit.hpp"
 #include "math/math.hpp"
 #include "boost/format.hpp"
 

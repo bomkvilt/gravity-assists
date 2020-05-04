@@ -146,7 +146,7 @@ TEST_F(pathfinder_tests, EVJ)
 		E->Script = scripts[2];
 	}
 	
-	auto V = std::make_unique<NodeFlyBy>();
+	auto V = std::make_unique<Nodes::NodeFlyBy>();
 	{
 		V->MismatchLimit = 1e+3;
 		V->SphereRadius = 1.7e+8;
@@ -177,14 +177,15 @@ TEST_F(pathfinder_tests, EVJ)
 	auto solver = PathFinder(std::move(mission));
 	auto paths  = solver.FirstApprox();
 
-	auto links = std::map<FReal, Link::Link>();
+	auto links = std::map<FReal, PathFinder::FlightChain>();
 	for (auto& path : paths)
 	{
 		ASSERT_EQ(path.chain.size(), 2);
-		links[path.totalImpulse] = path.chain.rbegin()->link;
+		links[path.totalImpulse] = path;
 	}
 	ASSERT_GE(paths.size(), 1);
 
 	auto& [v_min, top] = *links.begin();
-	EXPECT_LT(v_min, 6000);
+	EXPECT_LT(v_min, 6500);
+	EXPECT_GT(v_min, 5000);
 }

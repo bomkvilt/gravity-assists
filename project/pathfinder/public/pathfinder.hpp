@@ -27,12 +27,21 @@ namespace Pathfinder
 			FReal totalMismatch = 0;
 			FReal totalImpulse = 0;
 			FReal totalTime = 0;
+			FReal startTime = 0;
 
+			FlightChain() = default;
 			FlightChain(std::vector<FlightInfo>&& chain);
 		};
 		
-		using FirstApproxDB = std::map<Int64, std::vector<FlightChain>>;
-		using Functionality = std::function<FReal(const FlightChain&)>;
+		struct SecondApproxData
+		{
+			FlightChain chain;
+			FReal functionality = 0;
+		};
+
+		using FirstApproxDB  = std::map<Int64, std::vector<FlightChain>>;
+		using SecondApproxDB = std::multimap<Int64, SecondApproxData>;
+		using Functionality  = std::function<FReal(const FlightChain&)>;
 
 	public:
 		PathFinder(Mission&& mission);
@@ -47,7 +56,7 @@ namespace Pathfinder
 		auto GetFunctionalityBounds() const->std::tuple<FReal, FReal>;
 
 		// modifies a DB with all paths of all computed time offsets
-		void FilterResults(std::function<void(FirstApproxDB& db)> visiter);
+		void FilterResults(std::function<void(const FirstApproxDB& db)> visiter);
 		void FilterResults(FReal minFunctionalityToLeft);
 
 		// splits left first approx flights on two passive parts with a point with velocity impulce.
@@ -55,13 +64,14 @@ namespace Pathfinder
 		void SecondApprox();
 
 	protected:
-
+		void SecondApprox(const FlightChain& flight, Int64 t0);
 
 	protected:
 		Mission mission;
 		
 		Functionality functionality;
-		FirstApproxDB firstApproxData;
+		FirstApproxDB firstApproxDB;
+		SecondApproxDB secondApproxDB;
 	};
 }
 

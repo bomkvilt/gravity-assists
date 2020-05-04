@@ -1,9 +1,15 @@
-#include "keplerOrbit.hpp"
+#include "trajectory/keplerOrbit.hpp"
 #include "math/math.hpp"
+
 
 
 namespace Pathfinder::Kepler
 {
+	FReal r(FReal p, FReal e, FReal q)
+	{
+		return p / (1 + e * Math::Cos(q));
+	}
+	
 	FReal h(FReal vi, FReal ri, FReal GM)
 	{
 		return vi*vi - 2*GM/ri;

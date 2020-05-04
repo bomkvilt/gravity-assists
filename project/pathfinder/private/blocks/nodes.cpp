@@ -1,5 +1,5 @@
 #include "nodes.hpp"
-#include "keplerOrbit.hpp"
+#include "trajectory/keplerOrbit.hpp"
 
 
 namespace Pathfinder::Utiles
@@ -38,12 +38,12 @@ namespace Pathfinder::Utiles
 	}
 }
 
-namespace Pathfinder
+namespace Pathfinder::Nodes
 {
-	auto NodeDepartureBase::Check(const InNodeParams& in, bool bGenCorrection)->std::tuple<OutNodeParams, bool> const
+	auto NodeDepartureBase::Check(const InParams& in, bool bGenCorrection) const -> std::tuple<OutParams, bool>
 	{
 		// impulse = parkinkg(r=parking) -> escape(r1=sphere, h=0) -> departure(v=w1)
-		auto params = OutNodeParams();
+		auto params = OutParams();
 		params.Impulse = Utiles::GetEscapeImpulse(
 			  ParkingRadius
 			, SphereRadius
@@ -67,10 +67,10 @@ namespace Pathfinder
 		return { params, true };
 	}
 	
-	auto NodeArrivalBase::Check(const InNodeParams& in, bool bGenCorrection)->std::tuple<OutNodeParams, bool> const
+	auto NodeArrivalBase::Check(const InParams& in, bool bGenCorrection) const -> std::tuple<OutParams, bool>
 	{
 		// impulse = arrival(v=w0) -> transfer(v0=w0, r0=shere, r1=parking) -> parking(r=parking)
-		auto params = OutNodeParams();
+		auto params = OutParams();
 		params.Impulse = Utiles::GetParkingImpulse(
 			  SphereRadius
 			, ParkingRadius
@@ -94,11 +94,11 @@ namespace Pathfinder
 		return { params, true };
 	}
 	
-	auto NodeFlyBy::Check(const InNodeParams& in, bool bGenCorrection)->std::tuple<OutNodeParams, bool> const
+	auto NodeFlyBy::Check(const InParams& in, bool bGenCorrection) const -> std::tuple<OutParams, bool>
 	{
 		auto w0 = in.W0.Size();
 		auto w1 = in.W1.Size();
-		auto params = OutNodeParams();
+		auto params = OutParams();
 
 		// is the mismatch suitable?
 		params.Mismatch = Math::Abs(w1 - w0);
@@ -139,6 +139,27 @@ namespace Pathfinder
 				, dmax
 				, A_kink
 				, K_kink
+			);
+		}
+		return { params, true };
+	}
+	
+	auto BurnNode::Check(const InParams& in, bool bGenCorrection) const -> std::tuple<OutParams, bool>
+	{
+		auto params = OutParams();
+		params.Impulse = (in.W1 - in.W1).Size();
+
+		if (ImpulseLimit > 0 && params.Impulse > ImpulseLimit)
+		{
+			return { params, false };
+		}
+		if (ImpulseLimit > 0 && bGenCorrection)
+		{
+			params.Correction = Utiles::MakeCorrection(
+				  params.Impulse
+				, ImpulseLimit
+				, A_impulse
+				, K_impulse
 			);
 		}
 		return { params, true };

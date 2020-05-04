@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "interfaces/ephemerides.hpp"
 #include "planetScriptSimple.hpp"
-#include "link.hpp"
+#include "blocks/link.hpp"
 
 
 struct Link_tests : public testing::Test
@@ -15,10 +15,10 @@ TEST_F(Link_tests, cocentricOrbits_venus)
 	auto A = PlanetScript::PlanetScriptSimple(3.986E+14, 149.6E+9, 31.6E+6, DEG2RAD(0  ));
 	auto B = PlanetScript::PlanetScriptSimple(3.248E+14, 108.2E+9, 19.4E+6, DEG2RAD(240));
 	auto C = PlanetScript::PlanetScriptSimple(1.327E+20, 0, 0, 0);
-	auto conf = Link::FindLinksConfig();
-	conf.A.SetDriver(&A);
-	conf.B.SetDriver(&B);
+	auto conf = Link::ScriptedLinkConfig();
 	conf.t0 = 0;
+	conf.SetA(A);
+	conf.SetB(B);
 	conf.te = B.GetT(0);
 	conf.ts = B.GetT(0) / 160;
 	conf.tt = 3600 * 24;
@@ -39,10 +39,10 @@ TEST_F(Link_tests, cocentricOrbits_mars)
 	auto A = PlanetScript::PlanetScriptSimple(3.986E+14, 149.6E+9, 31.6E+6, DEG2RAD(0));
 	auto B = PlanetScript::PlanetScriptSimple(4.282E+13, 227.9E+9, 59.4E+6, DEG2RAD(0));
 	auto C = PlanetScript::PlanetScriptSimple(1.327E+20, 0, 0, 0);
-	auto conf = Link::FindLinksConfig();
-	conf.A.SetDriver(&A);
-	conf.B.SetDriver(&B);
+	auto conf = Link::ScriptedLinkConfig();
 	conf.t0 = 0;
+	conf.SetA(A);
+	conf.SetB(B);
 	conf.te = B.GetT(0);
 	conf.ts = B.GetT(0) / 160;
 	conf.tt = 3600 * 24;
@@ -63,10 +63,10 @@ TEST_F(Link_tests, cocentricOrbits_tangency)
 	auto A = PlanetScript::PlanetScriptSimple(3.986E+14, 149.6E+9, 31.6E+6, 0.);
 	auto B = PlanetScript::PlanetScriptSimple(4.282E+13, 227.9E+9, 59.4E+6, 0.776);
 	auto C = PlanetScript::PlanetScriptSimple(1.327E+20, 0, 0, 0);
-	auto conf = Link::FindLinksConfig();
-	conf.A.SetDriver(&A);
-	conf.B.SetDriver(&B);
+	auto conf = Link::ScriptedLinkConfig();
 	conf.t0 = 0;
+	conf.SetA(A);
+	conf.SetB(B);
 	conf.te = B.GetT(0);
 	conf.ts = B.GetT(0) / 160;
 	conf.tt = 3600 * 24;
@@ -86,7 +86,7 @@ TEST_F(Link_tests, 3DVelocity)
 {
 	namespace l = Pathfinder::Link;
 	namespace u = Pathfinder::Link::Utiles;
-	auto finder = u::LinkAdapter(l::FindLinksConfig(), 0);
+	auto finder = u::ScriptedLink(l::ScriptedLinkConfig(), 0);
 	// trajectory in xz-plane
 	finder.R0 = FVector(10, 0, 0);
 	finder.R1 = FVector(0, 0, 10);

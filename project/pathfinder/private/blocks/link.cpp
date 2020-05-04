@@ -1,66 +1,78 @@
-#include "link.hpp"
+#include "blocks/link.hpp"
+#include "trajectory/keplerOrbit.hpp"
 #include "defer.hpp"
-#include "keplerOrbit.hpp"
+
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_multimin.h>
 #include <array>
+
+
+
+namespace Pathfinder::Link
+{
+	void ChechValue(FReal val)
+	{
+		if (isnan(val))
+		{
+			throw std::runtime_error("value cannot be NAN");
+		}
+	}
+
+	void ScriptedLinkConfig::SetA(Ephemerides::IEphemerides& script)
+	{
+		ChechValue(t0);
+		auto [RA_, VA_] = script.GetMovement(t0);
+		RA = RA_;
+		VA = VA_;
+	}
+
+	void ScriptedLinkConfig::SetB(Ephemerides::IEphemerides& script)
+	{
+		ChechValue(t0);
+		B.SetDriver(&script);
+		B.SetTime(t0);
+	}
+
+	void ScriptedLinkConfig::SetA(Ephemerides::IEphemerides::ptr& script)
+	{
+		SetA(*script);
+	}
+
+	void ScriptedLinkConfig::SetB(Ephemerides::IEphemerides::ptr& script)
+	{
+		SetB(*script);
+	}
+
+
+	void StaticLinkConfig::SetA(Ephemerides::IEphemerides& script)
+	{
+		ChechValue(t0);
+		auto [RA_, VA_] = script.GetMovement(t0);
+		RA = RA_;
+		VA = VA_;
+	}
+
+	void StaticLinkConfig::SetA(Ephemerides::IEphemerides::ptr& script)
+	{
+		SetA(*script);
+	}
+}
 
 
 namespace Pathfinder::Link::Utiles
 {
 	namespace kepel = ::Pathfinder::Kepler::Elliptic;
 
-	LinkAdapter::LinkAdapter(const FindLinksConfig& cfg, FReal f0)
-		: A(cfg.A)
-		, B(cfg.B)
-		, GM(cfg.GM)
-	{
-		this->A.SetTime(cfg.t0);
-		this->t0 = t0;
-		this->f0 = kepel::NZ(f0);
-		this->bf = kepel::bf(Q0, f0);
-		this->R0 = A.GetLocation();
-		this->r0 = R0.Size();
-	}
-
-	bool LinkAdapter::Find_t(FReal t)
-	{
-		B.SetTime(t);
-		R1 = B.GetLocation();
-		r1 = R1.Size();
-		Q1 = Q0 + Math::Angle2(R0, R1, Math::EPosAngles());
-
-		auto [res, bOK] = kepel::epwqq(r0, r1, Q0, Q1, f0);
-		if (bOK)
-		{
-			e = res.e;
-			p = res.p;
-			w = res.w;
-			q0 = res.q0;
-			q1 = res.q1;
-
-			a  = kepel::a(e, p);
-			E0 = kepel::E(q0, r0, e);
-			E1 = kepel::E(q1, r1, e);
-			M0 = kepel::M(E0, e);
-			M1 = kepel::M(E1, e);
-			dt = kepel::dt(M0, M1, a, GM, bf);
-			if (isinf(dt) || isnan(dt))
-			{
-				return false;
-			}
-
-			t1 = t0 + dt;
-		}
-		return bOK;
-	}
+	LinkAdapter::LinkAdapter(FReal GM)
+		: GM(GM)
+	{}
 
 	void LinkAdapter::FixParams()
 	{
 		Fix2DParams();
 		Fix3DParams();
 	}
-
+	
 	void LinkAdapter::Fix2DParams()
 	{
 		v0 = kepel::v(q0, e, p, GM);
@@ -85,8 +97,85 @@ namespace Pathfinder::Link::Utiles
 		V0 = rot0 * FVector(v0, 0, 0);
 		V1 = rot1 * FVector(v1, 0, 0);
 		// >> planet relative velocities
-		W0 = V0 - A.GetVelocity();
+		FixW01();
+	}
+
+	bool LinkAdapter::Find_t()
+	{
+		if (auto [res, bOK] = kepel::epwqq(r0, r1, Q0, Q1, f0); bOK)
+		{
+			e  = res.e;
+			p  = res.p;
+			w  = res.w;
+			q0 = res.q0;
+			q1 = res.q1;
+
+			a  = kepel::a(e, p);
+			E0 = kepel::E(q0, r0, e);
+			E1 = kepel::E(q1, r1, e);
+			M0 = kepel::M(E0, e);
+			M1 = kepel::M(E1, e);
+			dt = kepel::dt(M0, M1, a, GM, bf);
+			if (isinf(dt) || isnan(dt))
+			{
+				return false;
+			}
+
+			t1 = t0 + dt;
+			
+			return true;
+		}
+		return false;
+	}
+
+
+	ScriptedLink::ScriptedLink(const ScriptedLinkConfig& conf, FReal f0_)
+		: LinkAdapter(conf.GM)
+		, VA(conf.VA)
+		, B (conf.B )
+	{
+		t0 = conf.t0;
+		R0 = conf.RA;
+		r0 = R0.Size();
+		f0 = kepel::NZ(f0_);
+		bf = kepel::bf(Q0, f0);
+	}
+	
+	void ScriptedLink::FixW01()
+	{
+		W0 = V0 - VA;
 		W1 = V1 - B.GetVelocity();
+	}
+	
+	bool ScriptedLink::Find_t(FReal t)
+	{
+		B.SetTime(t);
+		R1 = B.GetLocation();
+		r1 = R1.Size();
+		Q1 = Q0 + Math::Angle2(R0, R1, Math::EPosAngles());
+		return LinkAdapter::Find_t();
+	}
+
+
+	StaticLink::StaticLink(const StaticLinkConfig& conf, FReal f0_)
+		: LinkAdapter(conf.GM)
+		, VA(conf.VA)
+		, VB(conf.VB)
+	{
+		R0 = conf.RA;
+		R1 = conf.RB;
+		t0 = conf.t0;
+		Q1 = Q0 + Math::Angle2(R0, R1, Math::EPosAngles());
+		r0 = R0.Size();
+		r1 = R0.Size();
+		f0 = kepel::NZ(f0_);
+		bf = kepel::bf(Q0, f0);
+	}
+
+	void StaticLink::FixW01()
+	{
+		W0 = V0 - VA;
+		W1 = V1 - VB;
 	}
 }
 
@@ -213,7 +302,7 @@ namespace Pathfinder::Link::Utiles
 
 namespace Pathfinder::Link::Utiles
 {
-	bool FindAsRoot(LinkAdapter& link, FReal t0, FReal t1, FReal v0, FReal v1, FReal DTOL, FReal TTOL)
+	bool FindAsRoot(ScriptedLink& link, FReal t0, FReal t1, FReal v0, FReal v1, FReal DTOL, FReal TTOL)
 	{
 		using namespace Math;
 		do
@@ -243,7 +332,7 @@ namespace Pathfinder::Link::Utiles
 		return false;
 	}
 
-	bool FindMinimum(LinkAdapter& link, FReal t0, FReal t1, FReal v0, FReal v1, FReal DTOL, FReal TTOL)
+	bool FindMinimum(ScriptedLink& link, FReal t0, FReal t1, FReal v0, FReal v1, FReal DTOL, FReal TTOL)
 	{
 		// mirror the problem to positive space
 		v0 = Math::Abs(v0);
@@ -256,9 +345,11 @@ namespace Pathfinder::Link::Utiles
 		F.f = [](const gsl_vector* v, void* params)->double
 		{
 			auto t = gsl_vector_get(v, 0);
-			auto link = (LinkAdapter*)params;
+			auto link = (ScriptedLink*)params;
 			if (!link->Find_t(t))
-			{ return NAN; }
+			{ 
+				return NAN; 
+			}
 			return Math::Abs(t - link->t1);
 		};
 
@@ -324,10 +415,21 @@ namespace Pathfinder::Link::Utiles
 
 namespace Pathfinder::Link
 {
-	auto FindLinks(std::vector<Link>& links, const FindLinksConfig& cfg, FReal f0)
+	void FindLinks(std::vector<Link>& links, const StaticLinkConfig& cfg, const std::vector<FReal>& f0s)
 	{
-		using namespace Math;
-		auto link = Utiles::LinkAdapter(cfg, f0);
+		for (auto f0 : f0s)
+		{
+			auto link = Utiles::StaticLink(cfg, f0);
+			if (link.Find_t())
+			{
+				links.push_back(std::move(link));
+			}
+		}
+	}
+
+	void FindLinks(std::vector<Link>& links, const ScriptedLinkConfig& cfg, FReal f0)
+	{
+		auto link = Utiles::ScriptedLink(cfg, f0);
 
 		// find roots of (t_expected - t_required) function
 		auto window = Utiles::RootWindowHelper(cfg.ts / 10);
@@ -370,7 +472,7 @@ namespace Pathfinder::Link
 		}
 	}
 
-	void FindLinks(std::vector<Link>& links, const FindLinksConfig& cfg, const std::vector<FReal>& f0s)
+	void FindLinks(std::vector<Link>& links, const ScriptedLinkConfig& cfg, const std::vector<FReal>& f0s)
 	{
 		for (auto f0 : f0s)
 		{

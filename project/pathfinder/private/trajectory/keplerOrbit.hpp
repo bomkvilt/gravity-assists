@@ -5,8 +5,10 @@
 #include "math/math.hpp"
 
 
+
 namespace Pathfinder::Kepler
 {
+	FReal r(FReal p , FReal e , FReal q );
 	FReal h(FReal vi, FReal ri, FReal GM);
 	FReal v(FReal hi, FReal ri, FReal GM);
 
