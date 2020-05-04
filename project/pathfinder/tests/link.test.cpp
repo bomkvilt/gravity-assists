@@ -12,8 +12,8 @@ TEST_F(Link_tests, cocentricOrbits_venus)
 {
 	using namespace Pathfinder;
 	// flight from the Earth to the Venus with initial phase distance of 240 deg.
-	auto A = PlanetScript::PlanetScriptSimple(3.986E+14, 149.6E+9, 31.6E+6, DEG2RAD(0  ));
-	auto B = PlanetScript::PlanetScriptSimple(3.248E+14, 108.2E+9, 19.4E+6, DEG2RAD(240));
+	auto A = PlanetScript::PlanetScriptSimple(3.986E+14, 149.6E+9, 31.6E+6, DEG2RAD(10 ));
+	auto B = PlanetScript::PlanetScriptSimple(3.248E+14, 108.2E+9, 19.4E+6, DEG2RAD(250));
 	auto C = PlanetScript::PlanetScriptSimple(1.327E+20, 0, 0, 0);
 	auto conf = Link::ScriptedLinkConfig();
 	conf.t0 = 0;
@@ -36,8 +36,8 @@ TEST_F(Link_tests, cocentricOrbits_mars)
 {
 	using namespace Pathfinder;
 	// flight from the Earth to the Mars with initial phase distance of 0 deg.
-	auto A = PlanetScript::PlanetScriptSimple(3.986E+14, 149.6E+9, 31.6E+6, DEG2RAD(0));
-	auto B = PlanetScript::PlanetScriptSimple(4.282E+13, 227.9E+9, 59.4E+6, DEG2RAD(0));
+	auto A = PlanetScript::PlanetScriptSimple(3.986E+14, 149.6E+9, 31.6E+6, DEG2RAD(20));
+	auto B = PlanetScript::PlanetScriptSimple(4.282E+13, 227.9E+9, 59.4E+6, DEG2RAD(20));
 	auto C = PlanetScript::PlanetScriptSimple(1.327E+20, 0, 0, 0);
 	auto conf = Link::ScriptedLinkConfig();
 	conf.t0 = 0;
@@ -60,8 +60,8 @@ TEST_F(Link_tests, cocentricOrbits_tangency)
 {
 	using namespace Pathfinder;
 	// flight from the Earth to the Mars with initial phase distance of 0 deg.
-	auto A = PlanetScript::PlanetScriptSimple(3.986E+14, 149.6E+9, 31.6E+6, 0.);
-	auto B = PlanetScript::PlanetScriptSimple(4.282E+13, 227.9E+9, 59.4E+6, 0.776);
+	auto A = PlanetScript::PlanetScriptSimple(3.986E+14, 149.6E+9, 31.6E+6, .5 + 0.);
+	auto B = PlanetScript::PlanetScriptSimple(4.282E+13, 227.9E+9, 59.4E+6, .5 + 0.776);
 	auto C = PlanetScript::PlanetScriptSimple(1.327E+20, 0, 0, 0);
 	auto conf = Link::ScriptedLinkConfig();
 	conf.t0 = 0;
@@ -103,4 +103,72 @@ TEST_F(Link_tests, 3DVelocity)
 	EXPECT_NEAR(finder.V1.x,-60, epsilon);
 	EXPECT_NEAR(finder.V1.y,  0, epsilon);
 	EXPECT_NEAR(finder.V1.z,  0, epsilon);
+}
+
+TEST_F(Link_tests, twoParts)
+{
+	using namespace Pathfinder;
+	auto A = PlanetScript::PlanetScriptSimple(3.986E+14, 149.6E+9, 31.6E+6, .5 + 0.);
+	auto B = PlanetScript::PlanetScriptSimple(4.282E+13, 227.9E+9, 59.4E+6, .5 + 0.776);
+	auto C = PlanetScript::PlanetScriptSimple(1.327E+20, 0, 0, 0);
+
+	auto baseLink = Link::Link();
+	{
+		auto conf = Link::ScriptedLinkConfig();
+		conf.t0 = 0;
+		conf.SetA(A);
+		conf.SetB(B);
+		conf.te = B.GetT(0);
+		conf.ts = B.GetT(0) / 160;
+		conf.tt = 3600 * 24;
+		conf.td = 3600 * 24 / 100;
+		conf.GM = C.GetGM(0);
+
+		auto links = std::vector<Link::Link>();
+		Link::FindLinks(links, conf, { DEG2RAD(90) });
+		baseLink = links.back();
+	}
+	
+	auto q = baseLink.GetRealAnomaly(0.5);
+	auto R = baseLink.GetTragectoryPoint(q);
+	auto f = baseLink.GetTossAngle(q);
+	auto Q = q - baseLink.w;
+
+	auto link1 = Link::Link();
+	{
+		auto conf = Link::StaticLinkConfig();
+		conf.t0 = 0;
+		conf.SetA(A);
+		conf.RB = R;
+		conf.GM = C.GetGM(0);
+
+		auto links = std::vector<Link::Link>();
+		Link::FindLinks(links, conf, { DEG2RAD(90) });
+		EXPECT_EQ(links.size(), 1);
+		link1 = links.back();
+	}
+	auto t1 = link1.dt;
+
+	auto link2 = Link::Link();
+	{
+		auto conf = Link::ScriptedLinkConfig();
+		conf.t0 = t1;
+		conf.RA = R;
+		conf.SetB(B);
+		conf.te = B.GetT(0);
+		conf.ts = B.GetT(0) / 160;
+		conf.tt = 3600 * 24;
+		conf.td = 3600 * 24 / 10;
+		conf.GM = C.GetGM(0);
+
+		auto links = std::vector<Link::Link>();
+		Link::FindLinks(links, conf, { f - Q });
+		link2 = links.back();
+	}
+	auto t2 = link2.dt;
+
+	auto ta = baseLink.dt;
+	auto tb = t1 + t2;
+
+	ASSERT_NEAR(ta, tb, 0.01 * ta);
 }

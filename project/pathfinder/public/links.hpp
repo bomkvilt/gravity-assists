@@ -26,6 +26,13 @@ namespace Pathfinder::Link
 		FReal a = 0;
 		FReal w = 0;
 		bool bf = false;
+
+		FVector GetAxisX() const;
+		FVector GetAxisY() const;
+		FVector GetAxisZ() const;
+		FVector GetTragectoryPoint(FReal q) const;
+		FReal   GetRealAnomaly(FReal fraction) const;
+		FReal   GetTossAngle(FReal q) const;
 	};
 }
 

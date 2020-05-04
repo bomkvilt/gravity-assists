@@ -59,6 +59,46 @@ namespace Pathfinder::Link
 }
 
 
+namespace Pathfinder::Link
+{
+	FVector Link::GetAxisX() const
+	{
+		return R0.GetNormal();
+	}
+
+	FVector Link::GetAxisY() const
+	{
+		return -(GetAxisX() ^ GetAxisZ());
+	}
+
+	FVector Link::GetAxisZ() const
+	{
+		return (R0 ^ R1).GetNormal() * (Q1 - Q0 <= Math::Pi ? 1 : -1);
+	}
+
+	FVector Link::GetTragectoryPoint(FReal q) const
+	{
+		auto r = Kepler::r(p, e, q);
+		auto A = FQuat(GetAxisZ(), RAD2DEG(q - q0));
+		return r * (A * GetAxisX());
+	}
+
+	FReal Link::GetRealAnomaly(FReal fraction) const
+	{
+		assert(fraction >= 0 && fraction <= 1);
+		return bf
+			? q0 + fraction*(q1 - q0)
+			: q1 + fraction*(q0 - q1 + 2*Math::Pi)
+			;
+	}
+
+	FReal Link::GetTossAngle(FReal q) const
+	{
+		return Kepler::Elliptic::f(q - w, q, e, bf);
+	}
+}
+
+
 namespace Pathfinder::Link::Utiles
 {
 	namespace kepel = ::Pathfinder::Kepler::Elliptic;
@@ -82,20 +122,25 @@ namespace Pathfinder::Link::Utiles
 
 	void LinkAdapter::Fix3DParams()
 	{
+		// velocity orientations in XYZ
+		auto rot0 = FQuat({ 0, 0, 1 }, RAD2DEG(f0));
+		auto rot1 = FQuat({ 0, 0, 1 }, RAD2DEG(f1));
+		// >> velocities in XYZ
+		V0 = rot0 * FVector(v0, 0, 0);
+		V1 = rot1 * FVector(v1, 0, 0);
+
 		// >> gloabal basis
 		auto x = FVector(1, 0, 0);
 		auto z = FVector(0, 0, 1);
 		// >> local plane's basis
-		auto X = (R0     ).GetNormal();
-		auto Z = (R0 ^ R1).GetNormal();
+		auto X = GetAxisX();
+		auto Z = GetAxisZ();
 		// >> rotation xyz -> XYZ
 		auto rotP = Math::BasisTranslation(x, z, X, Z);
-		// velocity xyz orientations
-		auto rot0 = rotP * FQuat(FVector(0, 0, 1), RAD2DEG(f0));
-		auto rot1 = rotP * FQuat(FVector(0, 0, 1), RAD2DEG(f1));
-		// >> velocities in XYZ
-		V0 = rot0 * FVector(v0, 0, 0);
-		V1 = rot1 * FVector(v1, 0, 0);
+		// >> velocity in xyz
+		V0 = rotP * V0;
+		V1 = rotP * V1;
+		
 		// >> planet relative velocities
 		FixW01();
 	}
@@ -167,7 +212,7 @@ namespace Pathfinder::Link::Utiles
 		t0 = conf.t0;
 		Q1 = Q0 + Math::Angle2(R0, R1, Math::EPosAngles());
 		r0 = R0.Size();
-		r1 = R0.Size();
+		r1 = R1.Size();
 		f0 = kepel::NZ(f0_);
 		bf = kepel::bf(Q0, f0);
 	}
@@ -268,7 +313,7 @@ namespace Pathfinder::Link::Utiles
 		{
 			auto s0 = window[0].state;
 			auto s1 = window[1].state;
-			auto s2 = window[1].state;
+			auto s2 = window[2].state;
 			if (s0 == EState::eZero)
 			{
 				return EPatternType::eRoot;
@@ -334,23 +379,37 @@ namespace Pathfinder::Link::Utiles
 
 	bool FindMinimum(ScriptedLink& link, FReal t0, FReal t1, FReal v0, FReal v1, FReal DTOL, FReal TTOL)
 	{
+		struct Params
+		{
+			ScriptedLink& link; 
+			FReal t0;
+			FReal t1;
+		};
+		auto params = Params{ link, t0, t1 };
+
 		// mirror the problem to positive space
 		v0 = Math::Abs(v0);
 		v1 = Math::Abs(v1);
 
 		// function to minimize
 		auto F = gsl_multimin_function();
-		F.params = &link; 
+		F.params = &params;
 		F.n = 1;
 		F.f = [](const gsl_vector* v, void* params)->double
 		{
+			auto p = (Params*)params;
+
 			auto t = gsl_vector_get(v, 0);
-			auto link = (ScriptedLink*)params;
-			if (!link->Find_t(t))
+			if (!(t >= p->t0 && t <= p->t1))
+			{
+				return NAN;
+			}
+
+			if (!p->link.Find_t(t))
 			{ 
 				return NAN; 
 			}
-			return Math::Abs(t - link->t1);
+			return Math::Abs(t - p->link.t1);
 		};
 
 		// initial point and stepsize
@@ -381,6 +440,7 @@ namespace Pathfinder::Link::Utiles
 		};
 
 		// initialize the minimizer
+		gsl_set_error_handler_off();
 		check(gsl_multimin_fminimizer_set(s, &F, x, ss));
 
 		// find minimum
@@ -394,12 +454,6 @@ namespace Pathfinder::Link::Utiles
 			}
 			else check(status);
 			
-			auto tm = gsl_vector_get(s->x, 0);
-			if (!(tm >= t0 && tm <= t1))
-			{
-				return false;
-			}
-
 			if (s->fval <= DTOL)
 			{
 				return true;
@@ -422,6 +476,7 @@ namespace Pathfinder::Link
 			auto link = Utiles::StaticLink(cfg, f0);
 			if (link.Find_t())
 			{
+				link.FixParams();
 				links.push_back(std::move(link));
 			}
 		}
