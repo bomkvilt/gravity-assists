@@ -100,8 +100,13 @@ namespace Pathfinder
 		}
 	}
 
-	void PathFinder::SecondApprox()
+	const PathFinder::SecondApproxDB& PathFinder::SecondApprox()
 	{
+		if (!functionality)
+		{
+			throw std::runtime_error("functionality must be set for the operation");
+		}
+
 		for (auto& [t0, flights] : firstApproxDB)
 		{
 			for (auto& flight : flights)
@@ -109,6 +114,17 @@ namespace Pathfinder
 				SecondApprox(flight, t0);
 			}
 		}
+		return secondApproxDB;
+	}
+
+	const PathFinder::FirstApproxDB& PathFinder::GetFirstApproxDB() const
+	{
+		return firstApproxDB;
+	}
+
+	const PathFinder::SecondApproxDB& PathFinder::GetSecondApproxDB() const
+	{
+		return secondApproxDB;
 	}
 
 	void PathFinder::SecondApprox(const FlightChain& flight, Int64 t0)

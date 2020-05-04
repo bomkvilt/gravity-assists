@@ -111,10 +111,8 @@ TEST_F(pathfinder_tests, realPlanets)
 	ASSERT_GE(paths.size(), 1);
 
 	auto& [v_min, top] = *links.begin();
-	EXPECT_LT(v_min, 6150);
+	EXPECT_NEAR(v_min , 5774 , 2e+2);
 	EXPECT_NEAR(top.v0, 33141, 2e+2);
-	EXPECT_NEAR(top.v1, 21194, 2e+2);
-	EXPECT_NEAR(top.t1, 2.19e+7, 0.2e+7);
 }
 
 
@@ -186,6 +184,6 @@ TEST_F(pathfinder_tests, EVJ)
 	ASSERT_GE(paths.size(), 1);
 
 	auto& [v_min, top] = *links.begin();
-	EXPECT_LT(v_min, 6500);
-	EXPECT_GT(v_min, 5000);
+	EXPECT_LT(v_min, 8000);
+	EXPECT_GT(v_min, 7000);
 }

@@ -61,7 +61,10 @@ namespace Pathfinder
 
 		// splits left first approx flights on two passive parts with a point with velocity impulce.
 		// \note: count of links in SAX flight chain will be twice to the FAX's one
-		void SecondApprox();
+		const SecondApproxDB& SecondApprox();
+
+		const FirstApproxDB& GetFirstApproxDB() const;
+		const SecondApproxDB& GetSecondApproxDB() const;
 
 	protected:
 		void SecondApprox(const FlightChain& flight, Int64 t0);
