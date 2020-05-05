@@ -28,6 +28,9 @@ namespace Pathfinder::PlanetScript
 		using Chunks = std::unordered_map<UInt64, Chunk>;
 
 	public:
+		using ptr = std::shared_ptr<PlanetScript>;
+
+	public:
 		PlanetScript(EPlanet planet, const std::string& J2000Time);
 
 		FReal GetT (FReal time) const override;

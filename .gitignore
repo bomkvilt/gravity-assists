@@ -5,6 +5,7 @@
 
 build/
 Binaries/
+main.exe
 
 # User-specific files
 *.suo

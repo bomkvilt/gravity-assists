@@ -28,14 +28,15 @@ namespace Pathfinder::Solvers::Utiles
 		  std::vector<Link::Link>& links
 		, const Nodes::INode::ptr& A
 		, const Nodes::INode::ptr& B
-		, const Mission& mission
+		, const MissionConfig& mission
 		, const std::vector<FReal>& f0s
 		, FReal t0
+		, FReal GM
 	) {
-		auto SetA_GM_t0 = [&A, &mission, t0](auto& conf)
+		auto SetA_GM_t0 = [&A, t0, GM](auto& conf)
 		{
 			auto [asScript, asStatic] = ::Pathfinder::Nodes::CastNode(A);
-			conf.GM = mission.GM;
+			conf.GM = GM;
 			conf.t0 = t0;
 			if (asScript)
 			{
@@ -54,14 +55,9 @@ namespace Pathfinder::Solvers::Utiles
 			SetA_GM_t0(conf);
 			conf.SetB(asScript->Script);
 			conf.ts = mission.timeStep;
-			conf.td = mission.timeTol / 100;
+			conf.td = mission.timeFrac;
 			conf.tt = mission.timeTol;
-			conf.te = t0 + GetFlyTimeLimit(
-				  conf.RA.Size()
-				, conf.B.GetLocation().Size()
-				, mission.normalFlyPeriodFactor
-				, mission.GM
-			);
+			conf.te = t0 + GetFlyTimeLimit(conf.RA.Size(), conf.B.GetLocation().Size(), mission.normalFlyPeriodFactor, GM);
 			Link::FindLinks(links, conf, f0s);
 		}
 		else
@@ -73,8 +69,13 @@ namespace Pathfinder::Solvers::Utiles
 		}
 	}
 
-	auto ComputeFlight(const std::vector<NodeA>& nodes, FReal t0_, const Mission& mission, bool bWithCorrection) -> std::vector<PathFinder::FlightChain>
-	{
+	std::vector<PathFinder::FlightChain> ComputeFlight(
+		  const MissionConfig& mission
+		, const std::vector<NodeA>& nodes
+		, FReal t0
+		, FReal GM
+		, bool bWithCorrection
+	) {
 		using Tree = PathTree<PathFinder::FlightInfo>;
 		auto  tree = Tree();
 		tree.RegisterOnAdded([](PathFinder::FlightInfo& parent, PathFinder::FlightInfo& child)
@@ -88,7 +89,7 @@ namespace Pathfinder::Solvers::Utiles
 		{
 			auto node = PathFinder::FlightInfo();
 			node.link.W1 = FVector(0, 0, 0);
-			node.absTime = t0_;
+			node.absTime = t0;
 			return node;
 		}());
 		
@@ -105,7 +106,7 @@ namespace Pathfinder::Solvers::Utiles
 				const auto& parent = tree.GetPathByIF(parentID);
 				
 				// find all links from the departure time
-				Utiles::FindLinks(links, iA.node, iB.node, mission, iA.f0s, parent.absTime);
+				Utiles::FindLinks(links, iA.node, iB.node, mission, iA.f0s, parent.absTime, GM);
 				
 				// create child nodes
 				for (auto& link : links)
@@ -118,8 +119,9 @@ namespace Pathfinder::Solvers::Utiles
 						{
 							continue;
 						}
-						child.totalImpulse  += res.Impulse;
+						child.totalCorrection += res.Correction;
 						child.totalMismatch += res.Mismatch;
+						child.totalImpulse += res.Impulse;
 					}
 					if (bLast)
 					{ // check in node
@@ -129,8 +131,9 @@ namespace Pathfinder::Solvers::Utiles
 						{
 							continue;
 						}
-						child.totalImpulse  += res.Impulse;
+						child.totalCorrection += res.Correction;
 						child.totalMismatch += res.Mismatch;
+						child.totalImpulse += res.Impulse;
 					}
 					child.link = link;
 					child.absTime = link.dt;

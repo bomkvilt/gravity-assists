@@ -1,5 +1,5 @@
-#ifndef PATHFINDER__SOLVER_FIRSTAPPROX_HPP
-#define PATHFINDER__SOLVER_FIRSTAPPROX_HPP
+#ifndef PATHFINDER__FIRSTAPPROX_HPP
+#define PATHFINDER__FIRSTAPPROX_HPP
 
 #include "pathfinder.hpp"
 
@@ -7,8 +7,8 @@
 
 namespace Pathfinder::Solvers
 {
-	auto FirstApprox(Mission& mission, FReal t0)->std::vector<PathFinder::FlightChain>;
+	auto FirstApprox(const Mission& mission, FReal t0)->std::vector<PathFinder::FlightChain>;
 }
 
 
-#endif //!PATHFINDER__SOLVER_FIRSTAPPROX_HPP
+#endif //!PATHFINDER__FIRSTAPPROX_HPP

@@ -1,5 +1,5 @@
-GN_Unit(main 
+GN_Unit(main bFlat 
     mode eApp
     units pathfinder clflags
-    bFlat
+    copyTo "${GN_solution_root}"
     )

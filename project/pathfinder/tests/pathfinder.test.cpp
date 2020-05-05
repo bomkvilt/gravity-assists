@@ -33,10 +33,11 @@ TEST_F(pathfinder_tests, circularOrbits)
 
 	auto mission = Mission();
 	mission.GM = scripts[0]->GetGM(0);
-	mission.normalFlyPeriodFactor = 1;
-	mission.points_f0 = 60;
-	mission.timeStep = 3600. * 24 * 15;
-	mission.timeTol = 3600. * 24;
+	mission.faxConfig.normalFlyPeriodFactor = 1;
+	mission.faxConfig.points_f0 = 60;
+	mission.faxConfig.timeFrac  = 3600.;
+	mission.faxConfig.timeTol   = 3600. * 24;
+	mission.faxConfig.timeStep  = 3600. * 24 * 15;
 	mission.t0 = 0;
 	mission.nodes.push_back(std::move(A));
 	mission.nodes.push_back(std::move(B));
@@ -64,6 +65,8 @@ TEST_F(pathfinder_tests, realPlanets)
 	using namespace Pathfinder;
 	// this date is a mid of a E-M launch window
 	constexpr auto startDate = "2011-11-26, 12:00:00 TDB";
+	constexpr auto discretisation = 3600. * 24;
+	constexpr auto chunkSize = 3600. * 24 * 90;
 
 	PlanetScript::InitDatabases(SPICE_KERNELS);
 
@@ -75,7 +78,7 @@ TEST_F(pathfinder_tests, realPlanets)
 
 	for (auto& script : scripts)
 	{
-		script->MakeDiscret(3600. * 24, 3600. * 24 * 30 * 3);
+		script->MakeDiscret(discretisation, chunkSize);
 	}
 
 	auto A = std::make_unique<NodeDeparture::Circular>();
@@ -91,10 +94,11 @@ TEST_F(pathfinder_tests, realPlanets)
 
 	auto mission = Mission();
 	mission.GM = scripts[0]->GetGM(0);
-	mission.normalFlyPeriodFactor = 2;
-	mission.points_f0 = 360;
-	mission.timeStep = 3600. * 24 * 15;
-	mission.timeTol = 3600. * 24;
+	mission.faxConfig.normalFlyPeriodFactor = 2;
+	mission.faxConfig.points_f0 = 360;
+	mission.faxConfig.timeFrac  = discretisation;
+	mission.faxConfig.timeStep  = 3600. * 24 * 15;
+	mission.faxConfig.timeTol   = 3600. * 24;
 	mission.t0 = 0;
 	mission.nodes.push_back(std::move(A));
 	mission.nodes.push_back(std::move(B));
@@ -121,6 +125,8 @@ TEST_F(pathfinder_tests, EVJ)
 	using namespace Pathfinder;
 	// this date is a mid of a E-M launch window
 	constexpr auto startDate = "2021-10-11, 12:00:00 TDB";
+	constexpr auto discretisation = 3600. * 24;
+	constexpr auto chunkSize = 3600. * 24 * 90;
 
 	PlanetScript::InitDatabases(SPICE_KERNELS);
 
@@ -133,7 +139,7 @@ TEST_F(pathfinder_tests, EVJ)
 
 	for (auto& script : scripts)
 	{
-		script->MakeDiscret(3600. * 24, 3600. * 24 * 30 * 3);
+		script->MakeDiscret(discretisation, chunkSize);
 	}
 
 	auto E = std::make_unique<NodeDeparture::Circular>();
@@ -163,10 +169,11 @@ TEST_F(pathfinder_tests, EVJ)
 
 	auto mission = Mission();
 	mission.GM = scripts[0]->GetGM(0);
-	mission.normalFlyPeriodFactor = 1;
-	mission.points_f0 = 360;
-	mission.timeStep = 3600. * 24 * 15;
-	mission.timeTol = 3600. * 24;
+	mission.faxConfig.normalFlyPeriodFactor = 1;
+	mission.faxConfig.points_f0 = 360;
+	mission.faxConfig.timeFrac  = discretisation;
+	mission.faxConfig.timeStep  = 3600. * 24 * 15;
+	mission.faxConfig.timeTol   = 3600. * 24;
 	mission.t0 = 0;
 	mission.nodes.push_back(std::move(E));
 	mission.nodes.push_back(std::move(V));

@@ -10,8 +10,17 @@ namespace Pathfinder
 	class PathFinder
 	{
 	public:
-		struct FlightInfo
+		struct FlightInfo : public reflect::FArchived
 		{
+			ARCH_BEGIN(reflect::FArchived)
+				ARCH_FIELD(, , link)
+				ARCH_FIELD(, , totalCorrection)
+				ARCH_FIELD(, , totalMismatch)
+				ARCH_FIELD(, , totalImpulse)
+				ARCH_FIELD(, , totalTime)
+				ARCH_FIELD(, , absTime)
+				ARCH_END()
+		public:
 			FReal totalCorrection = 0;
 			FReal totalMismatch = 0;
 			FReal totalImpulse = 0;
@@ -20,8 +29,17 @@ namespace Pathfinder
 			Link::Link link;
 		};
 
-		struct FlightChain
+		struct FlightChain : public reflect::FArchived
 		{
+			ARCH_BEGIN(reflect::FArchived)
+				ARCH_FIELD(, , chain)
+				ARCH_FIELD(, , totalCorrection)
+				ARCH_FIELD(, , totalMismatch)
+				ARCH_FIELD(, , totalImpulse)
+				ARCH_FIELD(, , totalTime)
+				ARCH_FIELD(, , startTime)
+				ARCH_END()
+		public:
 			std::vector<FlightInfo> chain;
 			FReal totalCorrection = 0;
 			FReal totalMismatch = 0;

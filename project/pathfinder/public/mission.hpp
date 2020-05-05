@@ -66,23 +66,47 @@ namespace Pathfinder::Nodes
 
 namespace Pathfinder
 {
-	struct Mission
+	struct MissionConfig
+	{
+		FReal normalFlyPeriodFactor = NAN;
+		FReal points_f0 = NAN;
+		FReal timeStep  = NAN;
+		FReal timeFrac  = NAN;
+		FReal timeTol   = NAN;
+
+		void CopyValus(const MissionConfig& rhs)
+		{
+			*this = rhs;
+		}
+	};
+
+	struct FAXConfig : public MissionConfig
+	{};
+
+	struct SAXConfig : public MissionConfig
 	{
 		using BurnNodeFactory = std::function<Nodes::StaticNode::ptr()>;
-
-	public:
-		std::vector<Nodes::INode::ptr> nodes;
-		FReal normalFlyPeriodFactor = 0;
-		FReal points_f0 = 0;
-		FReal timeStep = 0;
-		FReal timeTol = 0;
-		FReal GM = 0;
-		FReal t0 = 0;
 
 		FReal burnArcFraction = 0.5;
 		FReal minMinimisationDelta = 0.1;
 		Int32 maxMinimisationIters = 100;
 		BurnNodeFactory burnNodeFactory;
+
+		FReal initialTossAngleStep = 0.001;
+		FReal initialBurnPointStep = 1.e+6;
+		FReal initialTimeStep = 3600. * 12;
+	};
+
+	struct Mission
+	{
+		using Nodes = std::vector<Nodes::INode::ptr>;
+
+		Nodes     nodes;
+		FAXConfig faxConfig;
+		SAXConfig saxConfig;
+
+		FReal GM = 0;
+		FReal t0 = 0;
 	};
 }
 

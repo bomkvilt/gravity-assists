@@ -6,8 +6,28 @@
 
 namespace Pathfinder::Link
 {
-	struct Link
+	struct Link : public reflect::FArchived
 	{
+		ARCH_BEGIN(reflect::FArchived)
+			ARCH_FIELD(, , R0) ARCH_FIELD(, , R1)
+			ARCH_FIELD(, , V0) ARCH_FIELD(, , V1)
+			ARCH_FIELD(, , W0) ARCH_FIELD(, , W1)
+			ARCH_FIELD(, , r0) ARCH_FIELD(, , r1)
+			ARCH_FIELD(, , f0) ARCH_FIELD(, , f1)
+			ARCH_FIELD(, , v0) ARCH_FIELD(, , v1)
+			ARCH_FIELD(, , t0) ARCH_FIELD(, , t1)
+			ARCH_FIELD(, , Q0) ARCH_FIELD(, , Q1)
+			ARCH_FIELD(, , q0) ARCH_FIELD(, , q1)
+			ARCH_FIELD(, , E0) ARCH_FIELD(, , E1)
+			ARCH_FIELD(, , M0) ARCH_FIELD(, , M1)
+			ARCH_FIELD(, , dt)
+			ARCH_FIELD(, , e )
+			ARCH_FIELD(, , p )
+			ARCH_FIELD(, , a )
+			ARCH_FIELD(, , w )
+			ARCH_FIELD(, , bf)
+			ARCH_END()
+	public:
 		FVector R0;		FVector R1;
 		FVector V0;		FVector V1;
 		FVector W0;		FVector W1;

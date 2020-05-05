@@ -12,25 +12,25 @@ namespace Pathfinder::Solvers::Utiles
 {
 	auto GetBurnParams(const Link::Link& link, FReal dQfactor) -> std::tuple<FVector, FReal>
 	{
-		auto Q = link.Q0 + (link.Q1 - link.Q0) * dQfactor;
-		auto q = link.w  + Q;
-		auto r = Kepler::r(link.p, link.e, q);
-		auto A = FQuat((link.R0 ^ link.R1).GetNormal(), RAD2DEG(q) * (link.bf ? 1 : -1));
-		auto R =  r * (A * link.R0.GetNormal());
-		auto f = Kepler::Elliptic::f(Q, q, link.e, link.bf);
-		return { R, f };
+		auto q = link.GetRealAnomaly(dQfactor);
+		auto R = link.GetTragectoryPoint(q);
+		auto f = link.GetTossAngle(q);
+		auto Q = q - link.w;
+		return { R, f - Q };
 	}
 
 
 	class StateVectorMap final
 	{
 		std::vector<FReal*> data;
+		std::vector<FReal> steps;
 
 	public:
 
 		void SetSize(int n)
 		{
-			data.resize(n, nullptr);
+			data .resize(n, nullptr);
+			steps.resize(n, NAN);
 		}
 
 		FReal& Assign(int n, FReal& field)
@@ -40,18 +40,22 @@ namespace Pathfinder::Solvers::Utiles
 			return field;
 		}
 
-		void Sync_x0_ss(gsl_vector* x0, gsl_vector* ss, FReal factor)
+		void SetStep(int n, FReal value)
+		{
+			assert(n < steps.size());
+			steps[n] = value;
+		}
+
+		void Sync_x0_ss(gsl_vector* x0, gsl_vector* ss)
 		{
 			assert(x0); assert(x0->size == data.size());
 			assert(ss); assert(ss->size == data.size());
 			for (auto i = 0; i < data.size(); ++i)
 			{
-				auto field = data[i];
-				assert(field);
-
-				auto val = *field;
-				gsl_vector_set(x0, i, val);
-				gsl_vector_set(ss, i, val * factor);
+				assert(data[i]);
+				assert(!isnan(steps[i]));
+				gsl_vector_set(x0, i, *data[i]);
+				gsl_vector_set(ss, i, steps[i]);
 			}
 		}
 
@@ -72,9 +76,10 @@ namespace Pathfinder::Solvers::Utiles
 	struct SecondApproxHelper
 	{
 		using TossAgles = std::vector<std::vector<FReal>>;
+		using BurnNodes = std::vector<Nodes::INode::ptr>;
 		using Chain     = std::vector<Utiles::NodeA>;
-		using BurnNodes = std::vector<Nodes::StaticNode::ptr>;
-		using Mapper    = PathFinder::Functionality;
+		using Mapper      = PathFinder::Functionality;
+		using FlightChain = PathFinder::FlightChain;
 
 		using Functor       = gsl_multimin_function;
 		using GSL_vector    = gsl_vector*;
@@ -85,12 +90,14 @@ namespace Pathfinder::Solvers::Utiles
 		int m = 0; // number of variables
 		
 		// << gsn entery
-		Functor fr; // functor to get minimised
-		GSL_vector x0 = nullptr; // initial values
-		GSL_vector ss = nullptr; // step sizes
-		GSL_minimiser mz = nullptr; // minimiser
+		Functor       fr;
+		GSL_vector    x0 = nullptr;
+		GSL_vector    ss = nullptr;
+		GSL_minimiser mz = nullptr;
 
-		FReal t = 0;
+		FReal t  = 0;
+		FReal GM = 0;
+
 		Chain chain;
 		Mapper functionality;
 		TossAgles tossAngles;
@@ -98,31 +105,33 @@ namespace Pathfinder::Solvers::Utiles
 		StateVectorMap fieldMap;
 		
 		FReal curFunctionality = NAN;
-		PathFinder::FlightChain currentFlight;
+		FlightChain currentFlight;
 
-		Mission& mission;
+		const SAXConfig& mission;
 
 	public:
-		SecondApproxHelper(Mission& mission, const PathFinder::FlightChain& flight, PathFinder::Functionality functionality)
-			: mission(mission)
+		SecondApproxHelper(const Mission& mission, const PathFinder::FlightChain& flight, const PathFinder::Functionality& functionality)
+			: mission(mission.saxConfig)
 			, k(flight.chain.size())
-			, m(flight.chain.size() * 5 + 1)
+			, m(flight.chain.size()*5 + 1)
 			, functionality(functionality)
+			, GM(mission.GM)
 		{
 			// create a list of toss angles
 			// \note: born nodes are included too
-			for (auto i = 0; i < 2*k + 1; ++i)
+			for (auto i = 0; i < m; ++i)
 			{
 				tossAngles.push_back({ 0 });
 			}
 
 			// create vectors of states and step sizes
-			auto x0 = gsl_vector_alloc(m);
-			auto ss = gsl_vector_alloc(m);
+			x0 = gsl_vector_alloc(m);
+			ss = gsl_vector_alloc(m);
 
 			// create extended mission chain
-			fieldMap.SetSize(m);
-			ParseFlight(flight);
+			burnNodes.reserve(k);
+			fieldMap .SetSize(m);
+			ParseFlight(flight, mission.nodes);
 
 			// create a functor
 			fr.params = this;
@@ -130,13 +139,8 @@ namespace Pathfinder::Solvers::Utiles
 			fr.f = [](const gsl_vector* v, void* params)->double
 			{
 				auto self = (SecondApproxHelper*)params;
-				self->fieldMap.ReadVector(v);
-				return self->ComputeFunctionality();
+				return self->ComputeFunctionality(v);
 			};
-
-			// create a minimiser
-			auto T = gsl_multimin_fminimizer_nmsimplex2;
-			mz = gsl_multimin_fminimizer_alloc(T, m);
 		}
 
 		~SecondApproxHelper()
@@ -146,17 +150,19 @@ namespace Pathfinder::Solvers::Utiles
 			if (mz) gsl_multimin_fminimizer_free(mz);
 		}
 
-		void ParseFlight(const PathFinder::FlightChain& flight)
+		void ParseFlight(const PathFinder::FlightChain& flight, const Mission::Nodes& nodes)
 		{
-			auto fpos = flight .chain.begin();
-			auto cpos = mission.nodes.begin();
-			auto cend = mission.nodes.end();
-			for (auto i = 0; cpos != cend; ++cpos, i += 2)
+			auto fpos = flight.chain.begin();
+			auto cpos = nodes.begin();
+			auto cend = nodes.end();
+			for (size_t i = 0; cpos != cend; ++cpos, ++i)
 			{
 				auto& node = *cpos;
 				auto bLast = cpos + 1 == cend;
+				auto fieldOffset = 5 * i;
+				auto chainOffset = 2 * i;
 
-				chain.push_back({ *cpos, tossAngles[i] });
+				chain.push_back({ *cpos, tossAngles[chainOffset + 0] });
 
 				if (bLast) continue;
 				
@@ -164,54 +170,71 @@ namespace Pathfinder::Solvers::Utiles
 				{
 					burnNodes.push_back(burn);
 
-					auto [R, f] = Utiles::GetBurnParams((fpos++)->link, mission.burnArcFraction);
-					fieldMap.Assign(i + 0, tossAngles[i + 0][0]) = fpos->link.f0;
-					fieldMap.Assign(i + 1, tossAngles[i + 1][0]) = f;
-					fieldMap.Assign(i + 2, burn->R.x) = R.x;
-					fieldMap.Assign(i + 3, burn->R.y) = R.y;
-					fieldMap.Assign(i + 4, burn->R.z) = R.z;
+					auto [R, f] = Utiles::GetBurnParams(fpos->link, mission.burnArcFraction);
+					fieldMap.Assign(fieldOffset + 0, tossAngles[chainOffset + 0][0]) = fpos->link.f0;
+					fieldMap.Assign(fieldOffset + 1, tossAngles[chainOffset + 1][0]) = f;
+					fieldMap.Assign(fieldOffset + 2, burn->R.x) = R.x;
+					fieldMap.Assign(fieldOffset + 3, burn->R.y) = R.y;
+					fieldMap.Assign(fieldOffset + 4, burn->R.z) = R.z;
+
+					fieldMap.SetStep(fieldOffset + 0, mission.initialTossAngleStep);
+					fieldMap.SetStep(fieldOffset + 1, mission.initialTossAngleStep);
+					fieldMap.SetStep(fieldOffset + 2, mission.initialBurnPointStep);
+					fieldMap.SetStep(fieldOffset + 3, mission.initialBurnPointStep);
+					fieldMap.SetStep(fieldOffset + 4, mission.initialBurnPointStep);
 				
-					chain.push_back({ std::dynamic_pointer_cast<Nodes::INode>(burn), tossAngles[i + 1] });
+					chain.push_back(NodeA{ burnNodes.back(), tossAngles[chainOffset + 1] });
+
+					++fpos;
 				}
 				else throw std::runtime_error("burn node cannot be nullptr");
 			}
 			fieldMap.Assign(m - 1, t) = flight.startTime;
-			fieldMap.Sync_x0_ss(x0, ss, 0.001);
+			fieldMap.SetStep(m - 1, mission.initialTimeStep);
+			fieldMap.Sync_x0_ss(x0, ss);
 		}
 
-		void InitMinimiser()
+		bool InitMinimiser()
 		{
-			if (!mz)
-			{
-				return;
-			}
+			if (mz)	return true;
 
 			gsl_set_error_handler_off();
 
-			if (auto code = gsl_multimin_fminimizer_set(mz, &fr, x0, ss))
+			auto T = gsl_multimin_fminimizer_nmsimplex2;
+			mz = gsl_multimin_fminimizer_alloc(T, m);
+			
+			auto status = gsl_multimin_fminimizer_set(mz, &fr, x0, ss);
+			if (status == GSL_SUCCESS || status == GSL_EBADFUNC)
 			{
-				throw std::runtime_error("unexpected code during minimiser initialisation: " + std::to_string(code));
-			}				
+				return !status;
+			}
+			throw std::runtime_error("Unexpected status from minimiser initialisation: " + std::to_string(status));
 		}
 
 	public:
 
-		double ComputeFunctionality()
+		double ComputeFunctionality(const gsl_vector* v)
 		{
 			assert(functionality);
-			auto results = ComputeFlight(chain, t, mission, true);
+			fieldMap.ReadVector(v);
+			auto results = ComputeFlight(mission, chain, t, GM, true);
+			if (!results.size())
+			{
+				return NAN;
+			}
 			
 			int i_min = 0;
 			FReal min = NAN;
 			for (auto i = 0; i < results.size(); ++i)
 			{
 				auto val = functionality(results[i]);
-				if (val < min)
+				if (val < min || isnan(min))
 				{
 					i_min = i;
 					min = val;
 				}
 			}
+			curFunctionality = min;
 			std::swap(currentFlight, results[i_min]);
 
 			return min;
@@ -219,12 +242,15 @@ namespace Pathfinder::Solvers::Utiles
 
 		bool FindMinimum()
 		{
-			InitMinimiser();
+			if (!InitMinimiser())
+			{
+				return false;
+			}
 
-			FReal prevValue = NAN;
-			FReal min_delta = mission.minMinimisationDelta;
-			int status = GSL_CONTINUE;
-			int max_iter = mission.maxMinimisationIters;
+			auto status = int(GSL_CONTINUE);
+			auto prevValue = FReal(NAN);
+			auto min_delta = mission.minMinimisationDelta;
+			auto max_iter = mission.maxMinimisationIters;
 			for (int iter = 0; status == GSL_CONTINUE && iter < max_iter; ++iter)
 			{
 				if (status = gsl_multimin_fminimizer_iterate(mz))
@@ -242,9 +268,9 @@ namespace Pathfinder::Solvers::Utiles
 				{
 					status = GSL_CONTINUE;
 				}
-				curFunctionality = curValue;
 				prevValue = curValue;
 			}
+			ComputeFunctionality(mz->x);
 			return true;
 		}
 	};
@@ -253,14 +279,13 @@ namespace Pathfinder::Solvers::Utiles
 
 namespace Pathfinder::Solvers
 {
-	auto SecondApprox(
-		  Mission& mission
+	std::tuple<PathFinder::FlightChain, FReal> SecondApprox(
+		  const Mission& mission
 		, const PathFinder::FlightChain& flight
-		, PathFinder::Functionality functionality
-	)->std::tuple<PathFinder::FlightChain, FReal>
-	{
+		, const PathFinder::Functionality& functionality
+	) {
 		auto helper = Utiles::SecondApproxHelper(mission, flight, functionality);
-		if (!helper.FindMinimum())
+		if (!helper.FindMinimum() && isnan(helper.curFunctionality))
 		{
 			return { {}, NAN };
 		}

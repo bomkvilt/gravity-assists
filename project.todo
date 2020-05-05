@@ -1,0 +1,4 @@
+Add metrics:
+    ☐ FindAsRoot.count_of_missed_roots
+    ☐ FindAsRoot.min_missed_root
+    ☐ SAX.count_of_failed_paths

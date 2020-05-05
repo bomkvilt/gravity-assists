@@ -1,5 +1,5 @@
-#ifndef PATHFINDER__SOLVER_SECONDAPPROX_HPP
-#define PATHFINDER__SOLVER_SECONDAPPROX_HPP
+#ifndef PATHFINDER__SECONDAPPROX_HPP
+#define PATHFINDER__SECONDAPPROX_HPP
 
 #include "pathfinder.hpp"
 
@@ -7,12 +7,12 @@
 
 namespace Pathfinder::Solvers
 {
-	auto SecondApprox(
-		  Mission& mission
+	std::tuple<PathFinder::FlightChain, FReal> SecondApprox(
+		  const Mission& mission
 		, const PathFinder::FlightChain& flight
-		, PathFinder::Functionality functionality
-	)->std::tuple<PathFinder::FlightChain, FReal>;
+		, const PathFinder::Functionality& functionality
+	);
 }
 
 
-#endif //!PATHFINDER__SOLVER_SECONDAPPROX_HPP
+#endif //!PATHFINDER__SECONDAPPROX_HPP

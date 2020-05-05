@@ -1,5 +1,5 @@
-#ifndef PATHFINDER__SOLVER_UTILES_HPP
-#define PATHFINDER__SOLVER_UTILES_HPP
+#ifndef PATHFINDER__UTILES_HPP
+#define PATHFINDER__UTILES_HPP
 
 #include "pathfinder.hpp"
 #include "math/math.hpp"
@@ -18,9 +18,10 @@ namespace Pathfinder::Solvers::Utiles
 		  std::vector<Link::Link>& links // found links
 		, const Nodes::INode::ptr& A     // node to get out
 		, const Nodes::INode::ptr& B     // node to get to
-		, const Mission& mission         // mission settings
+		, const MissionConfig& mission   // mission settings
 		, const std::vector<FReal>& f0s  // toss angles
 		, FReal t0                       // departure time
+		, FReal GM						 // center body's gravity parameter
 	);
 
 	template<typename It, typename Fn>
@@ -42,12 +43,18 @@ namespace Pathfinder::Solvers::Utiles
 
 	struct NodeA
 	{
-		Nodes::INode::ptr& node;
-		std::vector<FReal>& f0s;
+		const Nodes::INode::ptr& node;
+		const std::vector<FReal>& f0s;
 	};
 
-	auto ComputeFlight(const std::vector<NodeA>& nodes, FReal t0_, const Mission& mission, bool bWithCorrection = false)->std::vector<PathFinder::FlightChain>;
+	std::vector<PathFinder::FlightChain> ComputeFlight(
+		  const MissionConfig& mission
+		, const std::vector<NodeA>& nodes
+		, FReal t0
+		, FReal GM
+		, bool bWithCorrection = false
+	);
 }
 
 
-#endif //!PATHFINDER__SOLVER_UTILES_HPP
+#endif //!PATHFINDER__UTILES_HPP

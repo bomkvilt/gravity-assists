@@ -141,6 +141,7 @@ namespace Pathfinder
 		: chain(std::move(chain_))
 	{
 		auto& last = chain.back();
+		totalCorrection = last.totalCorrection;
 		totalMismatch = last.totalMismatch;
 		totalImpulse = last.totalImpulse;
 		totalTime = last.totalTime;
