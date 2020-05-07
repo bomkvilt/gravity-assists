@@ -283,6 +283,8 @@ namespace Pathfinder::Solvers
 		  const Mission& mission
 		, const PathFinder::FlightChain& flight
 		, const PathFinder::Functionality& functionality
+		// , FReal tMin
+		// , FReal tMax
 	) {
 		auto helper = Utiles::SecondApproxHelper(mission, flight, functionality);
 		if (!helper.FindMinimum() && isnan(helper.curFunctionality))

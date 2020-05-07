@@ -81,7 +81,7 @@ int SolveProblem(const std::string& path_)
 	}
 
 	auto path = std::filesystem::path(path_);
-	auto dir  = path.root_directory();
+	auto dir  = path.parent_path();
 	auto name = path.stem().wstring();
 	auto faxPath = dir / (name + L".fax.json");
 	auto saxPath = dir / (name + L".sax.json");
@@ -93,14 +93,31 @@ int SolveProblem(const std::string& path_)
 	auto dt = conf.timeSettings.dt;
 	for (auto t = t0; t <= t1; t += dt)
 	{
-		solver.FirstApprox(t);
+		auto percent = !Math::Equal(t1, t0) ? t / (t1 - t0) * 100 : 0;
+
+		std::cout << " >> processing t=" << t << " of t_max=" << t1 << " (" << percent << "%)... ";
+		auto size = solver.FirstApprox(t).size();
+		std::cout << "done (" << size << ")" << std::endl;
+		
+		if (Math::Equal(dt, 0))
+		{
+			break;
+		}
 	}
 
+	std::cout << " >> filtering results (" << solver.FAXDBSize() << ")... ";
 	auto [min, max] = solver.GetFunctionalityBounds();
 	solver.FilterResults(min + (max - min) * conf.keepFactor);
+	std::cout << "done (" << solver.FAXDBSize() << ")" << std::endl;
+	
+	std::cout << " >> saving results (" << solver.FAXDBSize() << ") to file: " << faxPath << std::endl;
 	SaveDB(faxPath.string(), solver.GetFirstApproxDB());
 	
+	std::cout << " >> optimisating results (" << solver.FAXDBSize() << ")... ";
 	solver.SecondApprox();
+	std::cout << "done (" << solver.SAXDBSize() << ")" << std::endl;
+
+	std::cout << " >> saving results (" << solver.SAXDBSize() << ") to file: " << saxPath << std::endl;
 	SaveDB(saxPath.string(), solver.GetSecondApproxDB());
 
 	return 0;

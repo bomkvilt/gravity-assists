@@ -29,36 +29,36 @@ void TimeConfig::CheckIsValid() const
 }
 
 
-Pathfinder::MissionConfig AXConf::MakeConfig() const
+Pathfinder::MissionConfig AXConf::MakeConfig(const TimeConfig& tconf) const
 {
 	using Pathfinder::MissionConfig;
 
 	auto conf = MissionConfig();
 	conf.normalFlyPeriodFactor = AX_CONF_CHECK(periodFactor);
 	conf.points_f0 = AX_CONF_CHECK(points_f0);
-	conf.timeFrac = AX_CONF_CHECK(timeFrac);
+	conf.timeFrac = tconf.discretisation;
 	conf.timeStep = AX_CONF_CHECK(timeStep);
 	conf.timeTol  = AX_CONF_CHECK(timeTol );
 	return conf;
 }
 
 
-Pathfinder::FAXConfig FAXConf::MakeConfig() const
+Pathfinder::FAXConfig FAXConf::MakeConfig(const TimeConfig& tconf) const
 {
 	type = "Mission.FAX";
 
 	auto conf = Pathfinder::FAXConfig();
-	conf.CopyValus(AXConf::MakeConfig());
+	conf.CopyValus(AXConf::MakeConfig(tconf));
 	return conf;
 }
 
 
-Pathfinder::SAXConfig SAXConf::MakeConfig() const
+Pathfinder::SAXConfig SAXConf::MakeConfig(const TimeConfig& tconf) const
 {
 	type = "Mission.SAX";
 
 	auto conf = Pathfinder::SAXConfig();
-	conf.CopyValus(AXConf::MakeConfig());
+	conf.CopyValus(AXConf::MakeConfig(tconf));
 	conf.burnArcFraction = AX_CONF_CHECK(burnArcFraction);
 	conf.maxMinimisationIters = AX_CONF_CHECK(maxMinimisationIters);
 	conf.minMinimisationDelta = AX_CONF_CHECK(minMinimisationDelta);
@@ -108,8 +108,8 @@ Pathfinder::Mission ProblemConfig::MakeMission() const
 	const auto sun = PlanetScript(EPlanet::eSun, timeSettings.startDate);
 
 	auto mission = Pathfinder::Mission();
-	mission.faxConfig = faxConf.MakeConfig();
-	mission.saxConfig = saxConf.MakeConfig();
+	mission.faxConfig = faxConf.MakeConfig(timeSettings);
+	mission.saxConfig = saxConf.MakeConfig(timeSettings);
 	mission.t0 = timeSettings.t0;
 	mission.GM = sun.GetGM(0);
 	for (auto planet : planets)

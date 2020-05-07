@@ -3,6 +3,7 @@
 
 #include "configs/mainConfig.hpp"
 #include <filesystem>
+#include <iostream>
 
 
 
@@ -18,6 +19,7 @@ int MakeMainConf(const std::string& path)
 	{
 		throw std::runtime_error("Unknown error during file saveing: '" + path + "'");
 	}
+	std::cout << " -- Core config was placed to " << path << std::endl;
 	return 0;
 }
 

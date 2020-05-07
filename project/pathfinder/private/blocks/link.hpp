@@ -47,7 +47,7 @@ namespace Pathfinder::Link::Utiles
 		
 		LinkAdapter(FReal GM);
 
-		void FixParams();
+		bool FixParams();
 		void Fix2DParams();
 		void Fix3DParams();
 		virtual void FixW01() = 0;

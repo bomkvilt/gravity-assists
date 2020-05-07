@@ -1,0 +1,59 @@
+{
+    "functionality": {
+        "correction":  1,
+        "mismatch": 10,
+        "impulse": 1e-3,
+        "time": 0
+    },
+    "timeSettings": {
+        "startDate": "2011-08-01, 12:00:00 TDB",
+        "discretisation": 2.6e+5,
+        "chunkSize": 7.7e+6,
+        "t0": 0.0e+0,
+        "t1": 1.3e+7,
+        "dt": 4.3e+5
+    },
+    "planets": [
+        {
+            "planet": "Earth",
+            "nodeType": "departure.circular",
+            "sphereRarius" : 1.7e8,
+            "parkingRadius": 6.6e+6,
+            "impulseLimit" : 12000
+        },
+        {
+            "planet": "Earth",
+            "nodeType": "flyby",
+            "sphereRarius" : 1.7e8,
+            "parkingRadius": 6.6e+6,
+            "mismatchLimit": 6000,
+            "mismatch_a": 1000,
+            "mismatch_k": 4
+        },
+        {
+            "planet": "Jupter",
+            "nodeType": "arrival.energy",
+            "energyConstant" : -7.6e+7,
+            "sphereRarius" : 2.4e+10,
+            "parkingRadius": 70e+6,
+            "impulseLimit" : 9000
+        }
+    ],
+    "faxConf": {
+        "periodFactor": 3,
+        "points_f0": 360,
+        "timeStep": 1.3e+6,
+        "timeTol": 2.6e+5
+    },
+    "saxConf": {
+        "periodFactor": 3,
+        "points_f0": 360,
+        "timeStep": 2.6e+5,
+        "timeTol": 2.6e+5,
+        "burnImpulseLimit": 1000,
+        "initialTossAngleStep": 0.0005,
+        "initialBurnPointStep": 1e+6,
+        "initialTimeStep": 1e+5
+    },
+    "keepFactor": 0.3
+}

@@ -279,7 +279,7 @@ namespace Pathfinder::PlanetScript
 	{
 		auto& chunk = chunks[chunkN];
 		FReal ti = chunkSize * chunkN;
-		FReal t1 = chunkSize + ti;
+		FReal t1 = chunkSize + ti + stepSize;
 		UInt64 N = ti / stepSize;
 		for (; ti < t1; ti += stepSize, ++N)
 		{

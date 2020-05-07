@@ -40,11 +40,11 @@ namespace PlanetConfig_::Utiles
 	ENodeType GetNodeType(const std::string& type_)
 	{
 		auto type = boost::to_lower_copy(type_);
-		if (type == "eDeparture_Circular") return ENodeType::eDeparture_Circular;
-		if (type == "eDeparture_Energy"  ) return ENodeType::eDeparture_Energy;
-		if (type == "eArrival_Circular"  ) return ENodeType::eArrival_Circular;
-		if (type == "eArrival_Energy"    ) return ENodeType::eArrival_Energy;
-		if (type == "eFlyBy"             ) return ENodeType::eFlyBy;
+		if (type == "departure.circular") return ENodeType::eDeparture_Circular;
+		if (type == "departure.energy"  ) return ENodeType::eDeparture_Energy;
+		if (type == "arrival.circular"  ) return ENodeType::eArrival_Circular;
+		if (type == "arrival.energy"    ) return ENodeType::eArrival_Energy;
+		if (type == "flyby"             ) return ENodeType::eFlyBy;
 		throw std::runtime_error("unexpected node type: " + type);
 	}
 

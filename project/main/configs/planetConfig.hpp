@@ -36,11 +36,11 @@ public:
 	FReal parkingRadius = NAN;
 	FReal energyConstant = NAN;
 	
-	FReal mismatchLimit = 0;
+	FReal mismatchLimit = NAN;
 	FReal mismatch_a = 1;
 	FReal mismatch_k = 4;
 	
-	FReal impulseLimit  = 0;
+	FReal impulseLimit  = NAN;
 	FReal impulse_a = 1;
 	FReal impulse_k = 4;
 

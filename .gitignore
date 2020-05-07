@@ -4,8 +4,10 @@
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
 build/
-Binaries/
 main.exe
+configs/
+!configs/core.json
+!configs/prob.json
 
 # User-specific files
 *.suo

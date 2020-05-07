@@ -2,6 +2,7 @@
 #define MAIN__MAKEPROBLEMCONFIG_HPP
 
 #include "configs/problemConfig.hpp"
+#include <iostream>
 
 
 
@@ -18,6 +19,7 @@ int makeProblemConf(const std::string& path)
 	{
 		throw std::runtime_error("Unknown error during file saveing: '" + path + "'");
 	}
+	std::cout << " -- Problem config was placed to " << path << std::endl;
 	return 0;
 }
 

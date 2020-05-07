@@ -107,10 +107,12 @@ namespace Pathfinder::Link::Utiles
 		: GM(GM)
 	{}
 
-	void LinkAdapter::FixParams()
+	bool LinkAdapter::FixParams()
 	{
 		Fix2DParams();
 		Fix3DParams();
+		return !isnan(W0.Sum()) 
+			&& !isnan(W1.Sum());
 	}
 	
 	void LinkAdapter::Fix2DParams()
@@ -448,11 +450,14 @@ namespace Pathfinder::Link::Utiles
 		for (int iter = 0, max_iter = 100; status == GSL_CONTINUE && iter < max_iter; ++iter)
 		{
 			auto status = gsl_multimin_fminimizer_iterate(s);
-			if (status == GSL_EBADFUNC)
+			if (status == GSL_EBADFUNC || status == GSL_EFAILED)
 			{
 				return false;
 			}
-			else check(status);
+			else
+			{
+				check(status);
+			}
 			
 			if (s->fval <= DTOL)
 			{
@@ -522,8 +527,11 @@ namespace Pathfinder::Link
 
 			default: throw std::runtime_error("unexpected mode: " + std::to_string((int)mode));
 			}
-			link.FixParams();
-			links.push_back(link);
+
+			if (link.FixParams())
+			{
+				links.push_back(link);
+			}
 		}
 	}
 

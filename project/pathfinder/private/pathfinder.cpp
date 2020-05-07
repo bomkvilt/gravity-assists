@@ -77,13 +77,11 @@ namespace Pathfinder
 		}
 
 		auto pos1 = firstApproxDB.begin();
-		auto end1 = firstApproxDB.end();
-		while (pos1 != end1)
+		while (pos1 != firstApproxDB.end())
 		{
 			auto& list = pos1->second;
-			auto pos2 = list.begin();
-			auto end2 = list.end();
-			while (pos2 != end2)
+			auto  pos2 = list.begin();
+			while (pos2 != list.end())
 			{
 				auto value = functionality(*pos2);
 				if (value > minFunctionalityToLeft)
@@ -115,6 +113,21 @@ namespace Pathfinder
 			}
 		}
 		return secondApproxDB;
+	}
+
+	size_t PathFinder::FAXDBSize() const
+	{
+		size_t size = 0;
+		for (auto& [_, data] : firstApproxDB)
+		{
+			size += data.size();
+		}
+		return size;
+	}
+
+	size_t PathFinder::SAXDBSize() const
+	{
+		return secondApproxDB.size();
 	}
 
 	const PathFinder::FirstApproxDB& PathFinder::GetFirstApproxDB() const

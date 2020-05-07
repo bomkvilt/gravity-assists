@@ -1,0 +1,14 @@
+{
+  "FileVersion": 2,
+  "Id": "5f8845d3-b9b0-3ea7-bdd3-a6ff39d45310",
+  "Items": [
+    {
+      "Id": "d3339b25-ca82-44ea-98f6-bba2274d6782",
+      "Command": "--coreConfPath ./configs/core.json"
+    },
+    {
+      "Id": "970ce620-0965-4c2e-be1d-b65a6ea83301",
+      "Command": "-f ./configs/prob.json"
+    }
+  ]
+}

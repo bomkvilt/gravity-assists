@@ -11,6 +11,8 @@ namespace Pathfinder::Solvers
 		  const Mission& mission
 		, const PathFinder::FlightChain& flight
 		, const PathFinder::Functionality& functionality
+		// , FReal tMin
+		// , FReal tMax
 	);
 }
 

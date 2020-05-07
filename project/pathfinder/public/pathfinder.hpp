@@ -81,6 +81,9 @@ namespace Pathfinder
 		// \note: count of links in SAX flight chain will be twice to the FAX's one
 		const SecondApproxDB& SecondApprox();
 
+		size_t FAXDBSize() const;
+		size_t SAXDBSize() const;
+
 		const FirstApproxDB& GetFirstApproxDB() const;
 		const SecondApproxDB& GetSecondApproxDB() const;
 

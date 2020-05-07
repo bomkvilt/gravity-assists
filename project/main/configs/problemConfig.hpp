@@ -11,17 +11,15 @@ struct AXConf : public reflect::FConfig
 		ARCH_FIELD(, , periodFactor)
 		ARCH_FIELD(, , points_f0)
 		ARCH_FIELD(, , timeStep)
-		ARCH_FIELD(, , timeFrac)
 		ARCH_FIELD(, , timeTol)
 		ARCH_END()
 public:
 	FReal periodFactor = NAN;
 	FReal points_f0 = NAN;
 	FReal timeStep = NAN;
-	FReal timeFrac = NAN;
 	FReal timeTol = NAN;
 
-	Pathfinder::MissionConfig MakeConfig() const;
+	Pathfinder::MissionConfig MakeConfig(const TimeConfig& tconf) const;
 
 protected:
 	mutable std::string type;
@@ -30,12 +28,25 @@ protected:
 
 struct FAXConf : public AXConf
 {
-	Pathfinder::FAXConfig MakeConfig() const;
+	Pathfinder::FAXConfig MakeConfig(const TimeConfig& tconf) const;
 };
 
 
 struct SAXConf : public AXConf
 {
+	ARCH_BEGIN(AXConf)
+		ARCH_FIELD(, , burnArcFraction)
+		ARCH_FIELD(, , minMinimisationDelta)
+		ARCH_FIELD(, , maxMinimisationIters)
+		ARCH_FIELD(, , initialTossAngleStep)
+		ARCH_FIELD(, , initialBurnPointStep)
+		ARCH_FIELD(, , initialTimeStep)
+		ARCH_FIELD(, , burnImpulseLimit)
+		ARCH_FIELD(, , burnImpulse_a)
+		ARCH_FIELD(, , burnImpulse_k)
+		ARCH_END()
+public:
+
 	FReal burnArcFraction = 0.5;
 	FReal minMinimisationDelta = 0.1;
 	Int32 maxMinimisationIters = 100;
@@ -50,7 +61,7 @@ struct SAXConf : public AXConf
 
 public:
 
-	Pathfinder::SAXConfig MakeConfig() const;
+	Pathfinder::SAXConfig MakeConfig(const TimeConfig& tconf) const;
 };
 
 
@@ -84,6 +95,7 @@ struct ProblemConfig : public reflect::FConfig
 		ARCH_FIELD(, , planets)
 		ARCH_FIELD(, , faxConf)
 		ARCH_FIELD(, , saxConf)
+		ARCH_FIELD(, , keepFactor)
 		ARCH_END()
 public:
 
