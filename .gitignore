@@ -5,10 +5,6 @@
 !/build/configs
 /main.exe
 
-# configuration files
-/configs/*
-!configs/core.json
-
 # Visual Studio directories
 .vs/
 .vscode/
