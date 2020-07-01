@@ -49,7 +49,7 @@ TEST_F(pathfinder_tests, circularOrbits)
 	for (auto& path : paths)
 	{
 		ASSERT_EQ(path.chain.size(), 1);
-		links[path.totalImpulse] = path.chain.rbegin()->link;
+		links[path.Impulse] = path.chain.rbegin()->link;
 	}
 	ASSERT_GE(paths.size(), 1);
 
@@ -110,7 +110,7 @@ TEST_F(pathfinder_tests, realPlanets)
 	for (auto& path : paths)
 	{
 		ASSERT_EQ(path.chain.size(), 1);
-		links[path.totalImpulse] = path.chain.rbegin()->link;
+		links[path.Impulse] = path.chain.rbegin()->link;
 	}
 	ASSERT_GE(paths.size(), 1);
 
@@ -186,7 +186,7 @@ TEST_F(pathfinder_tests, EVJ)
 	for (auto& path : paths)
 	{
 		ASSERT_EQ(path.chain.size(), 2);
-		links[path.totalImpulse] = path;
+		links[path.Impulse] = path;
 	}
 	ASSERT_GE(paths.size(), 1);
 

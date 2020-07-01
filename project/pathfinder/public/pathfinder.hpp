@@ -33,17 +33,17 @@ namespace Pathfinder
 		{
 			ARCH_BEGIN(reflect::FArchived)
 				ARCH_FIELD(, , chain)
-				ARCH_FIELD(, , totalCorrection)
-				ARCH_FIELD(, , totalMismatch)
-				ARCH_FIELD(, , totalImpulse)
+				ARCH_FIELD(, , Correction)
+				ARCH_FIELD(, , Mismatch)
+				ARCH_FIELD(, , Impulse)
 				ARCH_FIELD(, , totalTime)
 				ARCH_FIELD(, , startTime)
 				ARCH_END()
 		public:
 			std::vector<FlightInfo> chain;
-			FReal totalCorrection = 0;
-			FReal totalMismatch = 0;
-			FReal totalImpulse = 0;
+			FReal Correction = 0;
+			FReal Mismatch = 0;
+			FReal Impulse = 0;
 			FReal totalTime = 0;
 			FReal startTime = 0;
 

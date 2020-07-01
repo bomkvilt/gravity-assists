@@ -1,31 +1,17 @@
 #include "configs/planetConfig.hpp"
-#include "planetScript.hpp"
+#include "utiles/getPlanetName.hpp"
 #include  <boost/algorithm/string.hpp>
 
 
 
 namespace PlanetConfig_::Utiles
 {
-	using Pathfinder::PlanetScript::EPlanet;
 	using Pathfinder::PlanetScript::PlanetScript;
-
-	EPlanet GetPlanetName(const std::string& name_)
-	{
-		auto name = boost::to_lower_copy(name_);
-		if (name == "mercury") return EPlanet::eMercury;
-		if (name == "venus"  ) return EPlanet::eVenus;
-		if (name == "earth"  ) return EPlanet::eEarth;
-		if (name == "mars"   ) return EPlanet::eMars;
-		if (name == "jupter" ) return EPlanet::eJupter;
-		if (name == "moon"   ) return EPlanet::eMoon;
-		throw std::runtime_error("unexpected planet name: " + name);
-	}
 
 	PlanetScript::ptr CreatePlanetScript(const std::string& planetName, const std::string& startDate)
 	{
-		return std::make_shared<PlanetScript>(GetPlanetName(planetName), startDate);
+		return std::make_shared<PlanetScript>(utiles::GetPlanetName(planetName), startDate);
 	}
-
 
 
 	enum class ENodeType
@@ -56,7 +42,6 @@ namespace PlanetConfig_::Utiles
 		}
 		throw std::runtime_error("field '" + name + "' must be set.");
 	}
-
 }
 
 #define PLAN_CONF_CHECK(field)										\

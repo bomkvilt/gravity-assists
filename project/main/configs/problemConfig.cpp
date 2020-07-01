@@ -92,9 +92,9 @@ FunctionalityConfig::Functionality FunctionalityConfig::MakeFunctionality() cons
 		, i = AX_CONF_CHECK(impulse)
 		, t = AX_CONF_CHECK(time)
 	](const PathFinder::FlightChain& flight) {
-		return c * flight.totalCorrection
-			+  m * flight.totalMismatch
-			+  i * flight.totalImpulse
+		return c * flight.Correction
+			+  m * flight.Mismatch
+			+  i * flight.Impulse
 			+  t * flight.totalTime;
 	};
 }
