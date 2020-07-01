@@ -1,6 +1,8 @@
 # auto-generated files
 /build/*
+!/build/cmake
 !/build/scripts
+!/build/configs
 /main.exe
 
 # configuration files

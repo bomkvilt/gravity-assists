@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-include("cmake/gremlin/gremlin.cmake")
+include("build/cmake/gremlin/gremlin.cmake")
 
 # ---------------------------| enviroment
 # use a gloab vcpkg instance

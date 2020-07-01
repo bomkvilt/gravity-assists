@@ -1,12 +1,12 @@
-[submodule "cmake/gremlin"]
-	path = cmake/gremlin
+[submodule "gremlin"]
+	path = build/cmake/gremlin
 	url = https://github.com/bomkvilt/gremlin
-[submodule "libs/reflect"]
-	path = libs/reflect
+[submodule "reflect"]
+	path = libs/internal/reflect
 	url = https://github.com/bomkvilt/gremlin-reflect
-[submodule "libs/math"]
-	path = libs/math
+[submodule "math"]
+	path = libs/internal/math
 	url = https://github.com/bomkvilt/gremlin-math
-[submodule "3rd-party/spice"]
-	path = 3rd-party/spice
+[submodule "spice"]
+	path = libs/external/spice
 	url = https://github.com/bomkvilt/gremlin-spice
